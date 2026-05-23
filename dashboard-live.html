@@ -3,615 +3,825 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Performance Dashboard — Network Herlita</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<title>Dashboard Performa Tele — Network Herlita</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-*{margin:0;padding:0;box-sizing:border-box;}
-body{background:#f4f6f9;font-family:'Inter',sans-serif;color:#1a1d23;font-size:13px;}
-
-/* ── TOP BAR ── */
-.topbar{
-  background:#fff;border-bottom:1px solid #e5e8ef;
-  padding:12px 24px;display:flex;align-items:center;justify-content:space-between;
-  position:sticky;top:0;z-index:100;
+:root {
+  --bg: #080a0f;
+  --surface: #0f1219;
+  --surface2: #161b26;
+  --surface3: #1c2333;
+  --border: #1e2535;
+  --border2: #252d40;
+  --accent: #3b82f6;
+  --accent-glow: rgba(59,130,246,0.15);
+  --green: #22c55e;
+  --orange: #f97316;
+  --red: #ef4444;
+  --purple: #a855f7;
+  --yellow: #eab308;
+  --text: #e2e8f0;
+  --text2: #94a3b8;
+  --text3: #475569;
+  --font-mono: 'JetBrains Mono', monospace;
 }
-.topbar-left{display:flex;align-items:center;gap:10px;}
-.topbar-logo{
-  width:32px;height:32px;border-radius:8px;
-  background:linear-gradient(135deg,#1a73e8,#0d47a1);
-  display:flex;align-items:center;justify-content:center;
-  color:#fff;font-size:16px;
+* { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Sora', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
 }
-.topbar-title{font-size:15px;font-weight:700;color:#1a1d23;}
-.topbar-sub{font-size:11px;color:#6b7280;margin-top:1px;}
-.topbar-right{display:flex;align-items:center;gap:10px;}
-
-/* DATE PICKER PILL */
-.date-pill{
-  display:flex;align-items:center;gap:6px;
-  background:#fff;border:1px solid #d1d5db;border-radius:20px;
-  padding:6px 14px;font-size:12px;font-weight:500;color:#374151;
-  cursor:pointer;transition:border-color .15s;
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(59,130,246,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(59,130,246,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
 }
-.date-pill:hover{border-color:#1a73e8;}
-.date-pill svg{width:14px;height:14px;color:#6b7280;}
-
-/* SEARCH */
-.search-wrap{
-  display:flex;align-items:center;gap:6px;
-  background:#f9fafb;border:1px solid #d1d5db;border-radius:8px;
-  padding:6px 12px;
+.header {
+  position: sticky; top:0; z-index:100;
+  background: rgba(8,10,15,0.85);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
 }
-.search-wrap input{
-  border:none;background:transparent;font-size:12px;color:#374151;
-  outline:none;width:160px;font-family:'Inter',sans-serif;
+.header-brand { display: flex; align-items: center; gap: 10px; }
+.brand-badge {
+  width: 30px; height: 30px;
+  background: linear-gradient(135deg, var(--accent), #6366f1);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 800; color: white;
 }
-.search-wrap input::placeholder{color:#9ca3af;}
-
-/* REFRESH BTN */
-.refresh-btn{
-  background:#1a73e8;color:#fff;border:none;
-  border-radius:8px;padding:7px 14px;font-size:11px;font-weight:600;
-  cursor:pointer;font-family:'Inter',sans-serif;
-  display:flex;align-items:center;gap:5px;transition:background .15s;
+.brand-text { font-size: 13px; font-weight: 600; letter-spacing: 0.04em; }
+.brand-sub { font-size: 10px; color: var(--text3); font-family: var(--font-mono); }
+.header-right { display: flex; align-items: center; gap: 10px; }
+.refresh-info { font-family: var(--font-mono); font-size: 10px; color: var(--text3); }
+.refresh-dot {
+  width: 6px; height: 6px; background: var(--green);
+  border-radius: 50%; display: inline-block; margin-right: 5px;
+  animation: pulse 2s infinite;
 }
-.refresh-btn:hover{background:#1557b0;}
-
-/* LOADER */
-#loader{
-  position:fixed;inset:0;background:rgba(244,246,249,.9);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  z-index:999;gap:12px;transition:opacity .3s;
+.refresh-dot.error { background: var(--red); animation: none; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+.btn-refresh {
+  background: var(--surface2); border: 1px solid var(--border2);
+  border-radius: 6px; padding: 5px 12px; font-size: 11px;
+  font-family: var(--font-mono); color: var(--text2); cursor: pointer;
+  display: flex; align-items: center; gap: 6px; transition: all 0.2s;
 }
-#loader.hidden{opacity:0;pointer-events:none;}
-.spinner{
-  width:36px;height:36px;border-radius:50%;
-  border:3px solid #e5e8ef;border-top-color:#1a73e8;
-  animation:spin .7s linear infinite;
+.btn-refresh:hover { border-color: var(--accent); color: var(--accent); }
+.btn-refresh svg { width:12px; height:12px; }
+.data-source-badge {
+  font-size: 9px; font-family: var(--font-mono);
+  padding: 3px 8px; border-radius: 4px;
 }
-@keyframes spin{to{transform:rotate(360deg);}}
-.load-txt{font-size:13px;color:#6b7280;font-weight:500;}
-
-/* ERROR */
-#err-banner{
-  display:none;margin:16px 24px 0;
-  background:#fef2f2;border:1px solid #fca5a5;border-radius:10px;
-  padding:12px 16px;font-size:12px;color:#b91c1c;
+.data-source-badge.live { background: rgba(34,197,94,0.1); color: #4ade80; border: 1px solid rgba(34,197,94,0.2); }
+.data-source-badge.fallback { background: rgba(234,179,8,0.1); color: #facc15; border: 1px solid rgba(234,179,8,0.2); }
+.data-source-badge.loading { background: rgba(59,130,246,0.1); color: #60a5fa; border: 1px solid rgba(59,130,246,0.2); }
+.main { position: relative; z-index: 1; padding: 20px 24px 40px; max-width: 1400px; margin: 0 auto; }
+.fetch-banner {
+  display: none; background: rgba(234,179,8,0.08);
+  border: 1px solid rgba(234,179,8,0.25); border-radius: 8px;
+  padding: 10px 16px; margin-bottom: 16px; font-size: 11px;
+  color: #facc15; font-family: var(--font-mono);
+  align-items: center; gap: 8px;
 }
-
-/* MAIN */
-main{padding:20px 24px;max-width:1600px;}
-
-/* SECTION TITLE */
-.sec-title{
-  font-size:13px;font-weight:700;color:#1a1d23;
-  display:flex;align-items:center;gap:8px;margin-bottom:14px;
+.fetch-banner.show { display: flex; }
+.filters-bar {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 16px; background: var(--surface);
+  border: 1px solid var(--border); border-radius: 12px;
+  margin-bottom: 20px; flex-wrap: wrap;
 }
-.sec-title .last-upd{
-  font-size:11px;font-weight:400;color:#9ca3af;
+.filter-label { font-size: 10px; font-family: var(--font-mono); color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; white-space: nowrap; }
+.filter-group { display: flex; align-items: center; gap: 6px; }
+.filter-sep { width: 1px; height: 20px; background: var(--border2); }
+select.filter-select {
+  background: var(--surface2); border: 1px solid var(--border2);
+  border-radius: 6px; padding: 5px 10px; font-size: 11px;
+  font-family: 'Sora', sans-serif; color: var(--text);
+  cursor: pointer; outline: none; transition: border-color 0.2s;
+  appearance: none; -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2394a3b8' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 8px center; padding-right: 24px;
 }
-
-/* ── OVERVIEW ROW ── */
-.overview-row{display:grid;grid-template-columns:320px 1fr 1fr;gap:14px;margin-bottom:20px;}
-
-/* NTF CARD */
-.ntf-card{
-  background:#fff;border:1px solid #e5e8ef;border-radius:12px;
-  padding:20px;display:flex;align-items:center;gap:20px;
-}
-.donut-wrap{position:relative;width:90px;height:90px;flex-shrink:0;}
-.donut-wrap svg{transform:rotate(-90deg);}
-.donut-center{
-  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-  font-size:17px;font-weight:700;color:#1a1d23;
-}
-.ntf-info{}
-.ntf-label{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#9ca3af;margin-bottom:4px;}
-.ntf-value{font-size:22px;font-weight:700;color:#1a1d23;letter-spacing:-.02em;}
-.ntf-rows{margin-top:10px;display:flex;flex-direction:column;gap:4px;}
-.ntf-row-item{display:flex;justify-content:space-between;gap:20px;font-size:11px;}
-.ntf-row-item span:first-child{color:#9ca3af;text-transform:uppercase;letter-spacing:.06em;font-weight:500;}
-.ntf-row-item span:last-child{font-weight:600;color:#374151;}
-.gap-neg{color:#ef4444!important;}
-
-/* KPI GROUP */
-.kpi-group{
-  background:#fff;border:1px solid #e5e8ef;border-radius:12px;
-  padding:20px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;
-}
-.kpi-item{
-  padding:0 16px;border-right:1px solid #f3f4f6;
-}
-.kpi-item:first-child{padding-left:0;}
-.kpi-item:last-child{border-right:none;}
-.kpi-lbl{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#9ca3af;margin-bottom:6px;}
-.kpi-val{font-size:28px;font-weight:700;color:#1a1d23;letter-spacing:-.03em;}
-
-/* ── TABLE SECTION ── */
-.table-card{
-  background:#fff;border:1px solid #e5e8ef;border-radius:12px;
-  overflow:hidden;margin-bottom:20px;
-}
-.table-header{
-  padding:14px 20px;border-bottom:1px solid #f3f4f6;
-  display:flex;align-items:center;justify-content:space-between;
-}
-table{width:100%;border-collapse:collapse;}
-thead th{
-  background:#f9fafb;padding:10px 16px;
-  font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;
-  color:#6b7280;text-align:left;border-bottom:1px solid #f3f4f6;white-space:nowrap;
-}
-thead th.right{text-align:right;}
-tbody td{
-  padding:12px 16px;font-size:13px;
-  border-bottom:1px solid #f9fafb;vertical-align:middle;
-}
-tbody td.right{text-align:right;}
-tbody tr:last-child td{border-bottom:none;}
-tbody tr:hover td{background:#f9fafb;}
-tfoot td{
-  padding:10px 16px;font-size:11px;font-weight:700;
-  background:#f9fafb;border-top:1px solid #e5e8ef;color:#374151;
-}
-tfoot td.right{text-align:right;}
-
-/* NAME CELL */
-.name-cell{font-weight:600;color:#1a1d23;}
-
-/* ACHIEVEMENT BAR */
-.ach-wrap{display:flex;align-items:center;gap:8px;min-width:140px;}
-.ach-bar-track{
-  flex:1;height:20px;background:#eff6ff;border-radius:4px;overflow:hidden;
-  position:relative;
-}
-.ach-bar-fill{
-  height:100%;background:#1a73e8;border-radius:4px;
-  display:flex;align-items:center;justify-content:flex-end;padding-right:6px;
-  font-size:10px;font-weight:700;color:#fff;
-  transition:width .8s cubic-bezier(.4,0,.2,1);
-  min-width:32px;
-}
-.ach-bar-fill.over{background:#16a34a;}
-.ach-bar-fill.low{background:#f59e0b;}
-.ach-bar-fill.vlow{background:#ef4444;}
-.ach-pct{font-size:12px;font-weight:700;min-width:36px;text-align:right;}
-.ach-pct.over{color:#16a34a;}
-.ach-pct.low{color:#f59e0b;}
-.ach-pct.vlow{color:#ef4444;}
-.ach-pct.normal{color:#1a73e8;}
-
-/* STATUS CHIP */
-.chip{display:inline-flex;align-items:center;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;}
-.chip-cair{background:#dcfce7;color:#15803d;}
-.chip-onproc{background:#fef3c7;color:#b45309;}
-.chip-cancel{background:#fee2e2;color:#b91c1c;}
-.chip-reject{background:#fce7f3;color:#9d174d;}
-
-/* MONTH SELECTOR */
-.month-sel{
-  display:flex;align-items:center;gap:6px;
-  background:#fff;border:1px solid #d1d5db;border-radius:20px;
-  padding:5px 12px;font-size:12px;font-weight:500;color:#374151;
-  cursor:pointer;
-}
-.month-sel select{
-  border:none;background:transparent;font-size:12px;color:#374151;
-  font-family:'Inter',sans-serif;cursor:pointer;outline:none;
-  font-weight:500;
-}
-
-/* LIVE DOT */
-.live-dot{
-  display:inline-flex;align-items:center;gap:5px;
-  font-size:11px;color:#16a34a;font-weight:500;
-}
-.live-dot::before{
-  content:'';width:6px;height:6px;border-radius:50%;
-  background:#16a34a;animation:pulse 1.5s ease infinite;
-}
-@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
-
-/* EMPTY STATE */
-.empty{padding:40px;text-align:center;color:#9ca3af;font-size:13px;}
-
-/* RESPONSIVE */
-@media(max-width:900px){
-  .overview-row{grid-template-columns:1fr;}
-  .kpi-group{grid-template-columns:1fr 1fr;}
-  main{padding:14px;}
-}
+select.filter-select:focus { border-color: var(--accent); }
+.filter-tag { font-size: 10px; font-family: var(--font-mono); color: var(--accent); background: var(--accent-glow); border: 1px solid rgba(59,130,246,0.25); border-radius: 4px; padding: 2px 8px; }
+.overview-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 20px; }
+.ov-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; transition: border-color 0.2s, transform 0.2s; position: relative; overflow: hidden; }
+.ov-card::before { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px; }
+.ov-card.total::before { background: linear-gradient(90deg, var(--accent), transparent); }
+.ov-card.golive::before { background: linear-gradient(90deg, var(--green), transparent); }
+.ov-card.cancel::before { background: linear-gradient(90deg, var(--orange), transparent); }
+.ov-card.reject::before { background: linear-gradient(90deg, var(--red), transparent); }
+.ov-card.approved::before { background: linear-gradient(90deg, var(--purple), transparent); }
+.ov-card.miss::before { background: linear-gradient(90deg, var(--yellow), transparent); }
+.ov-card:hover { border-color: var(--border2); transform: translateY(-1px); }
+.ov-label { font-size: 9px; font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+.ov-card.total .ov-label { color: var(--accent); }
+.ov-card.golive .ov-label { color: var(--green); }
+.ov-card.cancel .ov-label { color: var(--orange); }
+.ov-card.reject .ov-label { color: var(--red); }
+.ov-card.approved .ov-label { color: var(--purple); }
+.ov-card.miss .ov-label { color: var(--yellow); }
+.ov-value { font-size: 26px; font-weight: 700; font-family: var(--font-mono); line-height: 1; }
+.ov-card.total .ov-value { color: var(--text); }
+.ov-card.golive .ov-value { color: var(--green); }
+.ov-card.cancel .ov-value { color: var(--orange); }
+.ov-card.reject .ov-value { color: var(--red); }
+.ov-card.approved .ov-value { color: var(--purple); }
+.ov-card.miss .ov-value { color: var(--yellow); }
+.ov-pct { font-size: 10px; color: var(--text3); margin-top: 4px; font-family: var(--font-mono); }
+.pencairan-bar { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+.pencairan-item { display: flex; flex-direction: column; gap: 2px; }
+.pencairan-lbl { font-size: 9px; font-family: var(--font-mono); color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; }
+.pencairan-val { font-size: 16px; font-weight: 700; font-family: var(--font-mono); color: var(--green); }
+.pencairan-sep { width: 1px; height: 30px; background: var(--border2); }
+.section-title { font-size: 11px; font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.1em; color: var(--text3); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+.section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.tele-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; margin-bottom: 20px; }
+.tele-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; transition: border-color 0.2s; }
+.tele-card:hover { border-color: var(--border2); }
+.tele-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.tele-name-row { display: flex; align-items: center; gap: 10px; }
+.tele-avatar { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: white; flex-shrink: 0; }
+.tele-name { font-size: 14px; font-weight: 700; }
+.tele-spv { font-size: 10px; color: var(--text3); font-family: var(--font-mono); }
+.ach-section { margin-bottom: 4px; }
+.ach-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.ach-icon { font-size: 12px; flex-shrink: 0; width: 16px; }
+.ach-label { font-size: 10px; color: var(--text2); font-family: var(--font-mono); flex: 1; white-space: nowrap; }
+.ach-counts { font-size: 11px; font-family: var(--font-mono); color: var(--text3); white-space: nowrap; }
+.ach-pct { font-size: 12px; font-family: var(--font-mono); font-weight: 600; white-space: nowrap; min-width: 40px; text-align: right; }
+.ach-bar-wrap { height: 4px; background: var(--surface3); border-radius: 99px; overflow: hidden; margin-bottom: 8px; margin-left: 24px; }
+.ach-bar-fill { height: 100%; border-radius: 99px; transition: width 0.8s cubic-bezier(.22,.68,0,1.2); }
+.ach-bar-fill.motor-int { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+.ach-bar-fill.motor-ext { background: linear-gradient(90deg, #a855f7, #c084fc); }
+.ach-bar-fill.mobil { background: linear-gradient(90deg, #22c55e, #4ade80); }
+.pct-green { color: #4ade80; }
+.pct-orange { color: #fb923c; }
+.pct-red { color: #f87171; }
+.ach-divider { height: 1px; background: var(--border); margin: 8px 0; }
+.tele-footer { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
+.tele-stat-chip { display: flex; align-items: center; gap: 4px; font-size: 10px; font-family: var(--font-mono); padding: 3px 7px; border-radius: 4px; background: var(--surface2); }
+.chip-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+.table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 20px; }
+.table-header-bar { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+.table-title { font-size: 11px; font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.08em; color: var(--text2); }
+.table-count { font-size: 10px; font-family: var(--font-mono); color: var(--text3); }
+.data-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+.data-table th { background: var(--surface2); font-family: var(--font-mono); font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text3); padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.data-table td { padding: 8px 12px; border-bottom: 1px solid var(--border); color: var(--text2); vertical-align: top; }
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:hover td { background: rgba(255,255,255,0.02); }
+.data-table td.nama { color: var(--text); font-weight: 500; }
+.data-table td.mono { font-family: var(--font-mono); }
+.data-table td.rp { font-family: var(--font-mono); color: var(--green); }
+.data-table td.tele-col { font-weight: 600; }
+.status-chip { display: inline-flex; align-items: center; gap: 4px; font-family: var(--font-mono); font-size: 9px; text-transform: uppercase; letter-spacing: 0.06em; padding: 2px 7px; border-radius: 3px; font-weight: 600; white-space: nowrap; }
+.status-chip.golive { background: rgba(34,197,94,0.12); color: #4ade80; border: 1px solid rgba(34,197,94,0.25); }
+.status-chip.cancel { background: rgba(249,115,22,0.12); color: #fb923c; border: 1px solid rgba(249,115,22,0.25); }
+.status-chip.reject { background: rgba(239,68,68,0.12); color: #f87171; border: 1px solid rgba(239,68,68,0.25); }
+.status-chip.approved { background: rgba(168,85,247,0.12); color: #c084fc; border: 1px solid rgba(168,85,247,0.25); }
+.status-chip.miss { background: rgba(234,179,8,0.12); color: #facc15; border: 1px solid rgba(234,179,8,0.25); }
+.prod-chip { display: inline-block; font-family: var(--font-mono); font-size: 9px; padding: 1px 6px; border-radius: 3px; text-transform: uppercase; letter-spacing: 0.04em; }
+.prod-chip.motor { background: rgba(59,130,246,0.1); color: #60a5fa; border: 1px solid rgba(59,130,246,0.2); }
+.prod-chip.mobil { background: rgba(34,197,94,0.1); color: #4ade80; border: 1px solid rgba(34,197,94,0.2); }
+.src-chip { display: inline-block; font-family: var(--font-mono); font-size: 9px; padding: 1px 6px; border-radius: 3px; }
+.src-chip.internal { background: rgba(59,130,246,0.08); color: var(--accent); }
+.src-chip.external { background: rgba(100,116,139,0.1); color: var(--text3); }
+.pagination { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border-top: 1px solid var(--border); }
+.page-info { font-size: 10px; font-family: var(--font-mono); color: var(--text3); }
+.page-btns { display: flex; gap: 4px; }
+.page-btn { background: var(--surface2); border: 1px solid var(--border2); border-radius: 5px; padding: 4px 10px; font-size: 11px; font-family: var(--font-mono); color: var(--text2); cursor: pointer; transition: all 0.15s; }
+.page-btn:hover { border-color: var(--accent); color: var(--accent); }
+.page-btn.active { background: var(--accent); border-color: var(--accent); color: white; }
+.page-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+#loader { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 9999; transition: opacity 0.4s; }
+.loader-inner { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.loader-spinner { width: 36px; height: 36px; border: 2px solid var(--border2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+.loader-text { font-family: var(--font-mono); font-size: 11px; color: var(--text3); }
+@keyframes spin { to { transform: rotate(360deg); } }
+.last-updated-bar { font-size: 10px; font-family: var(--font-mono); color: var(--text3); padding: 8px 16px; text-align: center; }
 </style>
 </head>
 <body>
 
 <div id="loader">
-  <div class="spinner"></div>
-  <div class="load-txt">Mengambil data dari Google Sheets…</div>
+  <div class="loader-inner">
+    <div class="loader-spinner"></div>
+    <div class="loader-text" id="loader-text">Fetching live data dari Google Sheets...</div>
+  </div>
 </div>
 
-<div id="err-banner"></div>
-
-<!-- TOP BAR -->
-<div class="topbar">
-  <div class="topbar-left">
-    <div class="topbar-logo">📊</div>
+<header class="header">
+  <div class="header-brand">
+    <div class="brand-badge">NH</div>
     <div>
-      <div class="topbar-title">Network Herlita — Performance Dashboard</div>
-      <div class="topbar-sub">Order In · Connected to Google Sheets</div>
+      <div class="brand-text">NETWORK HERLITA</div>
+      <div class="brand-sub">Performa Tele Dashboard</div>
     </div>
   </div>
-  <div class="topbar-right">
-    <div class="month-sel">
-      📅
-      <select id="month-filter" onchange="applyFilter()">
-        <option value="ALL">Semua Bulan</option>
-        <option value="Januari">Januari 2026</option>
-        <option value="Februari">Februari 2026</option>
-        <option value="Maret">Maret 2026</option>
-        <option value="April">April 2026</option>
-        <option value="Mei">Mei 2026</option>
+  <div class="header-right">
+    <div id="data-source-badge" class="data-source-badge loading">⏳ Loading...</div>
+    <span class="refresh-info"><span class="refresh-dot" id="refresh-dot"></span><span id="last-refresh-label">—</span></span>
+    <button class="btn-refresh" onclick="refreshData()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.86"/></svg>
+      Refresh
+    </button>
+  </div>
+</header>
+
+<div class="main">
+  <div class="fetch-banner" id="fetch-banner">
+    ⚠️ Gagal fetch live data dari Google Sheets. Pastikan sheet sudah "Anyone with the link = Viewer" dan coba refresh.
+  </div>
+
+  <div class="filters-bar">
+    <span class="filter-label">Filter:</span>
+    <div class="filter-group">
+      <span class="filter-label">Bulan</span>
+      <select class="filter-select" id="filter-bulan" onchange="applyFilters()">
+        <option value="all">Semua Bulan</option>
       </select>
     </div>
-    <div class="search-wrap">
-      🔍 <input type="text" id="search-input" placeholder="Search Tele…" oninput="applyFilter()">
+    <div class="filter-sep"></div>
+    <div class="filter-group">
+      <span class="filter-label">Produk</span>
+      <select class="filter-select" id="filter-produk" onchange="applyFilters()">
+        <option value="all">Semua Produk</option>
+        <option value="MOTOR">Motor</option>
+        <option value="MOBIL">Mobil</option>
+      </select>
     </div>
-    <button class="refresh-btn" onclick="loadAll()">↺ Refresh</button>
+    <div class="filter-sep"></div>
+    <div class="filter-group">
+      <span class="filter-label">Source</span>
+      <select class="filter-select" id="filter-source" onchange="applyFilters()">
+        <option value="all">Semua Source</option>
+        <option value="INTERNAL">Internal</option>
+        <option value="EXTERNAL">External</option>
+      </select>
+    </div>
+    <div id="active-filter-tags" style="display:flex;gap:5px;flex-wrap:wrap;margin-left:auto;"></div>
   </div>
+
+  <div class="section-title">Overview</div>
+  <div class="overview-grid" id="overview-grid"></div>
+  <div class="pencairan-bar" id="pencairan-bar"></div>
+
+  <div class="section-title">Achievement per Tele</div>
+  <div class="tele-grid" id="tele-grid"></div>
+
+  <div class="section-title">Detail Data — Golive</div>
+  <div class="table-wrap">
+    <div class="table-header-bar">
+      <span class="table-title">Transaksi Golive</span>
+      <span class="table-count" id="table-count"></span>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>#</th><th>Tele</th><th>Nama Konsumen</th><th>Produk</th><th>Source</th>
+            <th>Merk/Tipe</th><th>Pencairan</th><th>Tanggal</th><th>Leasing</th><th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="table-body"></tbody>
+      </table>
+    </div>
+    <div class="pagination">
+      <span class="page-info" id="page-info"></span>
+      <div class="page-btns" id="page-btns"></div>
+    </div>
+  </div>
+
+  <div class="section-title">Semua Data</div>
+  <div class="table-wrap">
+    <div class="table-header-bar">
+      <span class="table-title">Semua Transaksi (State 22 — External selalu tampil)</span>
+      <span class="table-count" id="all-table-count"></span>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>#</th><th>Tele</th><th>Nama Konsumen</th><th>Produk</th>
+            <th>Source</th><th>Status</th><th>Pencairan</th><th>Tanggal</th>
+          </tr>
+        </thead>
+        <tbody id="all-table-body"></tbody>
+      </table>
+    </div>
+    <div class="pagination">
+      <span class="page-info" id="all-page-info"></span>
+      <div class="page-btns" id="all-page-btns"></div>
+    </div>
+  </div>
+
+  <div class="last-updated-bar" id="last-updated-bar"></div>
 </div>
 
-<main>
-
-  <!-- OVERVIEW -->
-  <div class="sec-title">
-    This Month Performance Overview
-    <span class="last-upd" id="last-upd-overview"></span>
-    <span style="margin-left:auto" class="live-dot">Live</span>
-  </div>
-
-  <div class="overview-row">
-
-    <!-- NTF DONUT -->
-    <div class="ntf-card">
-      <div class="donut-wrap">
-        <svg width="90" height="90" viewBox="0 0 90 90">
-          <circle cx="45" cy="45" r="36" fill="none" stroke="#f0f4ff" stroke-width="10"/>
-          <circle id="donut-arc" cx="45" cy="45" r="36" fill="none"
-            stroke="#1a73e8" stroke-width="10"
-            stroke-dasharray="0 226.2" stroke-linecap="round"/>
-        </svg>
-        <div class="donut-center" id="donut-pct">—</div>
-      </div>
-      <div class="ntf-info">
-        <div class="ntf-label">NTF Achievement (%)</div>
-        <div class="ntf-value" id="ntf-value">—</div>
-        <div class="ntf-rows">
-          <div class="ntf-row-item"><span>Target (Rp)</span><span id="ntf-target">—</span></div>
-          <div class="ntf-row-item"><span>Gap (Rp)</span><span id="ntf-gap" class="gap-neg">—</span></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- KPI GROUP 1 -->
-    <div class="kpi-group">
-      <div class="kpi-item">
-        <div class="kpi-lbl">Total Order In</div>
-        <div class="kpi-val" id="kpi-total">—</div>
-      </div>
-      <div class="kpi-item">
-        <div class="kpi-lbl">Golive / Cair</div>
-        <div class="kpi-val" id="kpi-golive" style="color:#16a34a">—</div>
-      </div>
-      <div class="kpi-item">
-        <div class="kpi-lbl">Cancel</div>
-        <div class="kpi-val" id="kpi-cancel" style="color:#f59e0b">—</div>
-      </div>
-    </div>
-
-    <!-- KPI GROUP 2 -->
-    <div class="kpi-group">
-      <div class="kpi-item">
-        <div class="kpi-lbl">Reject</div>
-        <div class="kpi-val" id="kpi-reject" style="color:#ef4444">—</div>
-      </div>
-      <div class="kpi-item">
-        <div class="kpi-lbl">Approved</div>
-        <div class="kpi-val" id="kpi-approved" style="color:#1a73e8">—</div>
-      </div>
-      <div class="kpi-item">
-        <div class="kpi-lbl">Conv. Rate</div>
-        <div class="kpi-val" id="kpi-conv" style="color:#7c3aed">—</div>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- PERFORMANCE TABLE -->
-  <div class="sec-title">
-    Performance By Tele
-    <span class="last-upd" id="last-upd-table"></span>
-  </div>
-
-  <div class="table-card">
-    <table>
-      <thead>
-        <tr>
-          <th>Tele Name</th>
-          <th>SPV</th>
-          <th class="right">Achievement (NTF)</th>
-          <th class="right">NTF Total (Rp)</th>
-          <th class="right">Target NTF (Rp)</th>
-          <th class="right">Total Lead</th>
-          <th class="right">Golive</th>
-          <th class="right">Cancel</th>
-          <th class="right">Reject</th>
-          <th class="right">Approved</th>
-          <th class="right">Source Internal</th>
-          <th class="right">Source External</th>
-        </tr>
-      </thead>
-      <tbody id="tele-tbody">
-        <tr><td colspan="12" class="empty">Memuat data…</td></tr>
-      </tbody>
-      <tfoot id="tele-tfoot"></tfoot>
-    </table>
-  </div>
-
-</main>
-
 <script>
-// ── CONFIG ─────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────
+//  CONFIG — GANTI DI SINI KALAU SHEET BERUBAH
+// ─────────────────────────────────────────────
 const SHEET_ID = '1cbiDyIBRRZSWyCZ-ewcYRSPkomYGzpJYfhiWHbYedOs';
-const SHEETS = {
-  orders:  'ORDER IN',
-  targets: 'TARGET PERTELE',
+const SHEET_GID = '0'; // gid tab ORDER IN — cek URL sheet lo jika berbeda
+
+// Nama kolom di header sheet lo (case-insensitive, partial match)
+// Edit sesuai nama kolom aktual di spreadsheet
+const COL_NAMES = {
+  tanggal:   ['TANGGAL','TGL','DATE','TANGGAL ORDER','TANGGAL GOLIVE'],
+  produk:    ['PRODUK','PRODUCT','JENIS PRODUK','JENIS'],
+  nama:      ['NAMA','NAMA KONSUMEN','CUSTOMER','KONSUMEN','NAMA CUSTOMER'],
+  status:    ['STATUS','STATUS ORDER','STATE','KONDISI'],
+  pencairan: ['PENCAIRAN','NOMINAL PENCAIRAN','NOMINAL','AMOUNT','JUMLAH'],
+  tele:      ['TELE','NAMA TELE','TELEMARKETING','SALES','PIC','MARKETING'],
+  source:    ['SOURCE','SUMBER','JENIS SOURCE','INT/EXT','INTERNAL/EXTERNAL'],
+  merk:      ['MERK','TIPE','KENDARAAN','MERK KENDARAAN','MERK/TIPE','UNIT'],
+  leasing:   ['LEASING','FINANCE','PERUSAHAAN','COMPANY','FIN'],
 };
-function csvUrl(sheet){
-  return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheet)}&cb=${Date.now()}`;
+
+// ─────────────────────────────────────────────
+//  TARGETS
+// ─────────────────────────────────────────────
+const TARGETS = {
+  MONIC: { motorInt: 50, motorExt: 60, mobilAmt: 300_000_000 },
+  RINDA: { motorInt: 50, motorExt: 60, mobilAmt: 300_000_000 },
+  NAFHA: { motorInt: 50, motorExt: 60, mobilAmt: 300_000_000 },
+  FIRA:  { motorInt: 25, motorExt: 30, mobilAmt: 650_000_000 },
+  DITA:  { motorInt: 25, motorExt: 30, mobilAmt: 650_000_000 },
+  DHITA: { motorInt: 25, motorExt: 30, mobilAmt: 650_000_000 },
+  LISA:  { motorInt: 25, motorExt: 30, mobilAmt: 650_000_000 },
+};
+const TELE_COLORS = {
+  DITA: '#3b82f6', DHITA: '#3b82f6',
+  FIRA: '#a855f7', LISA: '#ec4899',
+  MONIC: '#f97316', RINDA: '#22c55e', NAFHA: '#eab308',
+};
+
+// ─────────────────────────────────────────────
+//  STATE
+// ─────────────────────────────────────────────
+let RAW_DATA = [];
+let isLiveData = false;
+let currentBulan = 'all';
+let currentProduk = 'all';
+let currentSource = 'all';
+let tablePage = 1;
+let allTablePage = 1;
+const PAGE_SIZE = 15;
+let refreshTimer = null;
+let lastRefresh = null;
+
+// ─────────────────────────────────────────────
+//  CSV PARSER
+// ─────────────────────────────────────────────
+function parseCSVRow(line) {
+  const result = [];
+  let cur = '', inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === '"') { if (inQ && line[i+1]==='"') { cur+='"'; i++; } else inQ=!inQ; }
+    else if (c === ',' && !inQ) { result.push(cur); cur=''; }
+    else cur += c;
+  }
+  result.push(cur);
+  return result;
 }
 
-// ── STATE ──────────────────────────────────────────────────────────────────
-let orderRows  = [];
-let targetMap  = {}; // tele -> { targetNTF }
-
-// ── FETCH ──────────────────────────────────────────────────────────────────
-async function fetchCSV(sheet){
-  const res = await fetch(csvUrl(sheet));
-  if(!res.ok) throw new Error(`Gagal fetch ${sheet}: HTTP ${res.status}`);
-  const txt = await res.text();
-  const parsed = Papa.parse(txt, {header:true, skipEmptyLines:true});
-  return parsed.data;
+function findCol(headers, candidates) {
+  for (const c of candidates) {
+    const cu = c.toUpperCase();
+    const idx = headers.findIndex(h => h === cu);
+    if (idx >= 0) return idx;
+    const partial = headers.findIndex(h => h.includes(cu) || cu.includes(h));
+    if (partial >= 0) return partial;
+  }
+  return -1;
 }
 
-async function loadAll(){
-  showLoader(true);
-  hideErr();
-  try {
-    const [orders, targets] = await Promise.all([
-      fetchCSV(SHEETS.orders),
-      fetchCSV(SHEETS.targets),
+const BULAN_ID = ['','Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+
+function formatTanggal(val) {
+  if (!val) return '';
+  val = val.trim();
+  // Sudah "DD Bulan YYYY"
+  if (/^\d{1,2}\s+[A-Za-z]+\s+\d{4}$/.test(val)) return val;
+  // Parse separator-based
+  const parts = val.split(/[\/\-\.]/);
+  if (parts.length >= 3) {
+    let d, m, y;
+    if (parts[0].length === 4) { y=+parts[0]; m=+parts[1]; d=+parts[2]; }
+    else { d=+parts[0]; m=+parts[1]; y=+parts[2]; }
+    if (y > 1900 && m >= 1 && m <= 12 && d >= 1) {
+      return `${String(d).padStart(2,'0')} ${BULAN_ID[m]} ${y}`;
+    }
+  }
+  return val;
+}
+
+function normalizeStatus(s) {
+  s = (s || '').trim().toUpperCase();
+  if (/GOLIVE|GO.LIVE|^GL$/.test(s)) return 'GOLIVE';
+  if (/CANCEL|BATAL/.test(s)) return 'CANCEL';
+  if (/REJECT|TOLAK/.test(s)) return 'REJECT';
+  if (/APPROV|SETUJU/.test(s)) return 'APPROVED';
+  if (/MISS|LEVEL/.test(s)) return 'MISS LEVEL';
+  return s || 'UNKNOWN';
+}
+
+function parsePencairan(v) {
+  if (!v) return 0;
+  const n = parseFloat(v.replace(/[Rp\s\.]/g,'').replace(',','.'));
+  return isNaN(n) ? 0 : n;
+}
+
+function parseCSV(text) {
+  const lines = text.trim().split(/\r?\n/);
+  if (lines.length < 2) return [];
+  const headers = parseCSVRow(lines[0]).map(h => h.trim().toUpperCase());
+  const colIdx = {};
+  for (const [key, cands] of Object.entries(COL_NAMES)) {
+    colIdx[key] = findCol(headers, cands);
+  }
+
+  const result = [];
+  for (let i = 1; i < lines.length; i++) {
+    if (!lines[i].trim()) continue;
+    const row = parseCSVRow(lines[i]);
+    const get = k => colIdx[k] >= 0 ? (row[colIdx[k]] || '').trim() : '';
+
+    const tele = get('tele').toUpperCase().trim();
+    const tanggal = formatTanggal(get('tanggal'));
+    const status = normalizeStatus(get('status'));
+    if (!tele || !tanggal || !status || status === 'UNKNOWN') continue;
+
+    const produkRaw = get('produk').toUpperCase();
+    const produk = produkRaw.includes('MOBIL') || produkRaw.includes('CAR') ? 'MOBIL' : 'MOTOR';
+    const sourceRaw = get('source').toUpperCase();
+    const source = (sourceRaw.includes('INT') && !sourceRaw.includes('EXT')) ? 'INTERNAL' : 'EXTERNAL';
+
+    result.push([
+      tanggal, produk, get('nama') || '-', status,
+      parsePencairan(get('pencairan')),
+      tele, source,
+      get('merk') || '-', get('leasing') || '-'
     ]);
+  }
+  return result;
+}
 
-    orderRows = orders.filter(r => {
-      const k = Object.keys(r)[0];
-      return (r['TANGGAL']||r[k]||'').trim() !== '';
-    });
-
-    // Build target map — cari kolom nama tele & target NTF
-    targetMap = {};
-    targets.forEach(r => {
-      // cari kolom nama (fleksibel)
-      const nameKey = Object.keys(r).find(k =>
-        k.toUpperCase().includes('TELE') || k.toUpperCase().includes('NAME') || k.toUpperCase().includes('NAMA')
-      ) || Object.keys(r)[0];
-      const ntfKey = Object.keys(r).find(k =>
-        k.toUpperCase().includes('NTF') || k.toUpperCase().includes('TARGET')
-      ) || Object.keys(r)[1];
-
-      const name = (r[nameKey]||'').trim().toUpperCase();
-      const ntf  = parseMoney(r[ntfKey]);
-      if(name) targetMap[name] = { targetNTF: ntf };
-    });
-
-    console.log('✅ Orders:', orderRows.length, '| Targets:', Object.keys(targetMap));
-    console.log('Kolom Orders:', Object.keys(orderRows[0]||{}));
-    console.log('Kolom Targets:', Object.keys(targets[0]||{}));
-    console.log('Target map:', targetMap);
-
-    const now = new Date().toLocaleString('id-ID');
-    document.getElementById('last-upd-overview').textContent = `(Last Update: ${now})`;
-    document.getElementById('last-upd-table').textContent    = `(Last Update: ${now})`;
-
-    applyFilter();
-  } catch(e){
-    showErr(e.message);
-    console.error(e);
-  } finally {
-    showLoader(false);
+// ─────────────────────────────────────────────
+//  FETCH
+// ─────────────────────────────────────────────
+async function fetchLiveData() {
+  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${SHEET_GID}`;
+  try {
+    const res = await fetch(url, { cache: 'no-cache' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const text = await res.text();
+    if (!text || text.length < 50) throw new Error('Empty');
+    const parsed = parseCSV(text);
+    if (parsed.length === 0) throw new Error('No rows');
+    RAW_DATA = parsed;
+    isLiveData = true;
+    setBadge('live', `✅ LIVE — ${parsed.length} baris`);
+    document.getElementById('fetch-banner').classList.remove('show');
+    document.getElementById('refresh-dot').classList.remove('error');
+    return true;
+  } catch (e) {
+    console.warn('Fetch gagal:', e.message);
+    isLiveData = false;
+    setBadge('fallback', '⚠️ GAGAL FETCH');
+    document.getElementById('fetch-banner').classList.add('show');
+    document.getElementById('refresh-dot').classList.add('error');
+    return false;
   }
 }
 
-// ── FILTER ─────────────────────────────────────────────────────────────────
-function applyFilter(){
-  const month  = document.getElementById('month-filter').value;
-  const search = document.getElementById('search-input').value.trim().toUpperCase();
-
-  let rows = orderRows;
-
-  if(month !== 'ALL'){
-    rows = rows.filter(r => (r['TANGGAL']||'').toUpperCase().includes(month.toUpperCase()));
-  }
-
-  render(rows, search);
+function setBadge(type, label) {
+  const el = document.getElementById('data-source-badge');
+  el.className = `data-source-badge ${type}`;
+  el.textContent = label;
 }
 
-// ── AGGREGATE ──────────────────────────────────────────────────────────────
-function aggregate(rows){
-  const m = {};
-  rows.forEach(r => {
-    const tele = normTele(r['NAMA TELE'] || r['TELE'] || '');
-    const spv  = (r['SPV']||'').trim().toUpperCase() || '—';
-    const st   = (r['UPDATE']||'').trim().toUpperCase();
-    const pen  = parseMoney(r['PENCAIRAN']);
-    const src  = (r['SOURCE']||'').trim().toUpperCase();
-
-    if(!tele) return;
-    if(!m[tele]) m[tele] = {
-      spv, total:0, golive:0, cancel:0, reject:0, approved:0,
-      pencairan:0, internal:0, external:0
-    };
-    m[tele].total++;
-    if(st==='GOLIVE')    { m[tele].golive++;   m[tele].pencairan += pen; }
-    else if(st==='CANCEL')   m[tele].cancel++;
-    else if(st==='REJECT')   m[tele].reject++;
-    else if(st==='APPROVED') m[tele].approved++;
-    if(src==='INTERNAL') m[tele].internal++;
-    else                 m[tele].external++;
-  });
-  return m;
-}
-
-// ── RENDER ─────────────────────────────────────────────────────────────────
-function render(rows, search=''){
-  const teles = aggregate(rows);
-
-  // totals
-  const total    = rows.length;
-  const golive   = rows.filter(r=>(r['UPDATE']||'').trim().toUpperCase()==='GOLIVE').length;
-  const cancel   = rows.filter(r=>(r['UPDATE']||'').trim().toUpperCase()==='CANCEL').length;
-  const reject   = rows.filter(r=>(r['UPDATE']||'').trim().toUpperCase()==='REJECT').length;
-  const approved = rows.filter(r=>(r['UPDATE']||'').trim().toUpperCase()==='APPROVED').length;
-  const totalPen = rows.reduce((s,r) =>
-    (r['UPDATE']||'').trim().toUpperCase()==='GOLIVE' ? s+parseMoney(r['PENCAIRAN']) : s, 0);
-
-  // NTF target = sum all targets
-  const totalTarget = Object.values(targetMap).reduce((s,t) => s + (t.targetNTF||0), 0);
-  const ntfPct = totalTarget ? Math.round((totalPen/totalTarget)*100) : 0;
-  const gap = totalPen - totalTarget;
-  const convRate = total ? ((golive/total)*100).toFixed(1) : 0;
-
-  // KPIs
-  document.getElementById('kpi-total').textContent   = total;
-  document.getElementById('kpi-golive').textContent  = golive;
-  document.getElementById('kpi-cancel').textContent  = cancel;
-  document.getElementById('kpi-reject').textContent  = reject;
-  document.getElementById('kpi-approved').textContent= approved;
-  document.getElementById('kpi-conv').textContent    = convRate + '%';
-
-  // NTF
-  document.getElementById('ntf-value').textContent  = fmtMoney(totalPen);
-  document.getElementById('ntf-target').textContent = fmtMoney(totalTarget);
-  document.getElementById('donut-pct').textContent  = ntfPct + '%';
-
-  const gapEl = document.getElementById('ntf-gap');
-  gapEl.textContent = (gap >= 0 ? '▲ ' : '▼ ') + fmtMoney(Math.abs(gap));
-  gapEl.style.color = gap >= 0 ? '#16a34a' : '#ef4444';
-
-  // Donut arc
-  const circ = 2 * Math.PI * 36;
-  const dash = Math.min(ntfPct/100, 1) * circ;
-  const arc  = document.getElementById('donut-arc');
-  arc.setAttribute('stroke-dasharray', `${dash} ${circ}`);
-  arc.setAttribute('stroke', ntfPct >= 100 ? '#16a34a' : ntfPct >= 70 ? '#1a73e8' : '#f59e0b');
-
-  // TABLE
-  const tbody = document.getElementById('tele-tbody');
-  const tfoot = document.getElementById('tele-tfoot');
-  tbody.innerHTML = '';
-
-  let ft = {total:0, golive:0, cancel:0, reject:0, approved:0, pencairan:0, internal:0, external:0};
-  let totalTgt = 0;
-
-  const sorted = Object.entries(teles)
-    .filter(([name]) => !search || name.includes(search))
-    .sort((a,b) => b[1].pencairan - a[1].pencairan);
-
-  if(sorted.length === 0){
-    tbody.innerHTML = '<tr><td colspan="12" class="empty">Tidak ada data</td></tr>';
+// ─────────────────────────────────────────────
+//  INIT
+// ─────────────────────────────────────────────
+async function init() {
+  await fetchLiveData();
+  if (RAW_DATA.length === 0) {
+    document.getElementById('loader-text').textContent = 'Tidak ada data. Cek permission sheet & refresh.';
+    setTimeout(hideLoader, 2500);
     return;
   }
+  buildBulanOptions();
+  applyFilters();
+  startRefreshTimer();
+  hideLoader();
+}
 
-  sorted.forEach(([name, d], idx) => {
-    const tgt     = targetMap[name]?.targetNTF || 0;
-    const achPct  = tgt ? Math.round((d.pencairan/tgt)*100) : 0;
-    const achCls  = achPct >= 100 ? 'over' : achPct >= 70 ? '' : achPct >= 40 ? 'low' : 'vlow';
-    const pctCls  = achPct >= 100 ? 'over' : achPct >= 70 ? 'normal' : achPct >= 40 ? 'low' : 'vlow';
+function hideLoader() {
+  const l = document.getElementById('loader');
+  l.style.opacity = '0';
+  setTimeout(() => l.style.display = 'none', 400);
+}
 
-    ft.total    += d.total;
-    ft.golive   += d.golive;
-    ft.cancel   += d.cancel;
-    ft.reject   += d.reject;
-    ft.approved += d.approved;
-    ft.pencairan+= d.pencairan;
-    ft.internal += d.internal;
-    ft.external += d.external;
-    totalTgt    += tgt;
-
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td><span class="name-cell">${name}</span></td>
-      <td style="color:#6b7280">${d.spv}</td>
-      <td class="right">
-        <div class="ach-wrap">
-          <div class="ach-bar-track">
-            <div class="ach-bar-fill ${achCls}" style="width:${Math.min(achPct,100)}%">${achPct >= 15 ? achPct+'%' : ''}</div>
-          </div>
-          <span class="ach-pct ${pctCls}">${achPct}%</span>
-        </div>
-      </td>
-      <td class="right" style="font-weight:600">${fmtMoney(d.pencairan)}</td>
-      <td class="right" style="color:#6b7280">${tgt ? fmtMoney(tgt) : '—'}</td>
-      <td class="right">${d.total}</td>
-      <td class="right"><span class="chip chip-cair">${d.golive}</span></td>
-      <td class="right"><span class="chip chip-cancel">${d.cancel}</span></td>
-      <td class="right"><span class="chip chip-reject">${d.reject}</span></td>
-      <td class="right"><span class="chip chip-onproc">${d.approved}</span></td>
-      <td class="right">${d.internal}</td>
-      <td class="right">${d.external}</td>
-    `;
-    tbody.appendChild(tr);
+function buildBulanOptions() {
+  const order = BULAN_ID.slice(1);
+  const months = [...new Set(RAW_DATA.map(d => {
+    const p = d[0].split(' ');
+    return p.length >= 3 ? `${p[1]} ${p[2]}` : null;
+  }).filter(Boolean))].sort((a,b) => {
+    const [ma,ya] = a.split(' '), [mb,yb] = b.split(' ');
+    return ya !== yb ? +ya - +yb : order.indexOf(ma) - order.indexOf(mb);
   });
+  const sel = document.getElementById('filter-bulan');
+  while (sel.options.length > 1) sel.remove(1);
+  months.forEach(m => {
+    const o = document.createElement('option');
+    o.value = m; o.textContent = m; sel.appendChild(o);
+  });
+  if (months.length) {
+    sel.value = months[months.length-1];
+    currentBulan = months[months.length-1];
+  }
+}
 
-  const ftAch = totalTgt ? Math.round((ft.pencairan/totalTgt)*100) : 0;
-  tfoot.innerHTML = `
-    <tr>
-      <td colspan="2" style="font-weight:700">TOTAL (${sorted.length} Tele)</td>
-      <td class="right" style="font-weight:700;color:#1a73e8">${ftAch}%</td>
-      <td class="right" style="font-weight:700">${fmtMoney(ft.pencairan)}</td>
-      <td class="right">${totalTgt ? fmtMoney(totalTgt) : '—'}</td>
-      <td class="right">${ft.total}</td>
-      <td class="right">${ft.golive}</td>
-      <td class="right">${ft.cancel}</td>
-      <td class="right">${ft.reject}</td>
-      <td class="right">${ft.approved}</td>
-      <td class="right">${ft.internal}</td>
-      <td class="right">${ft.external}</td>
-    </tr>
+function applyFilters() {
+  currentBulan = document.getElementById('filter-bulan').value;
+  currentProduk = document.getElementById('filter-produk').value;
+  currentSource = document.getElementById('filter-source').value;
+  tablePage = 1; allTablePage = 1;
+  renderAll();
+  updateFilterTags();
+}
+
+function updateFilterTags() {
+  const c = document.getElementById('active-filter-tags');
+  c.innerHTML = '';
+  if (currentBulan !== 'all') addTag(c, currentBulan);
+  if (currentProduk !== 'all') addTag(c, currentProduk);
+  if (currentSource !== 'all') addTag(c, currentSource);
+}
+function addTag(c, label) {
+  const t = document.createElement('span');
+  t.className = 'filter-tag'; t.textContent = label; c.appendChild(t);
+}
+
+// ─────────────────────────────────────────────
+//  FILTER LOGIC
+// ─────────────────────────────────────────────
+function monthOf(r) { return r[0].split(' ').slice(1).join(' '); }
+
+function matchFilter(r) {
+  if (currentBulan !== 'all' && monthOf(r) !== currentBulan) return false;
+  if (currentProduk !== 'all' && r[1] !== currentProduk) return false;
+  if (currentSource !== 'all' && r[6] !== currentSource) return false;
+  return true;
+}
+
+function getFiltered() { return RAW_DATA.filter(matchFilter); }
+function getMonthData() {
+  return RAW_DATA.filter(r => currentBulan === 'all' || monthOf(r) === currentBulan);
+}
+
+// ─────────────────────────────────────────────
+//  RENDER
+// ─────────────────────────────────────────────
+function renderAll() {
+  const f = getFiltered(), m = getMonthData();
+  renderOverview(f);
+  renderPencairan(f);
+  renderTeleCards(m);
+  renderTable(f);
+  renderAllTable();
+}
+
+function renderOverview(data) {
+  const c = { total:0, GOLIVE:0, CANCEL:0, REJECT:0, APPROVED:0, 'MISS LEVEL':0 };
+  data.forEach(r => { c.total++; if (c[r[3]] !== undefined) c[r[3]]++; });
+  const t = c.total || 1;
+  document.getElementById('overview-grid').innerHTML = `
+    <div class="ov-card total"><div class="ov-label">Total Order</div><div class="ov-value">${c.total}</div><div class="ov-pct">semua status</div></div>
+    <div class="ov-card golive"><div class="ov-label">Golive</div><div class="ov-value">${c.GOLIVE}</div><div class="ov-pct">${pct(c.GOLIVE,t)}% dari total</div></div>
+    <div class="ov-card cancel"><div class="ov-label">Cancel</div><div class="ov-value">${c.CANCEL}</div><div class="ov-pct">${pct(c.CANCEL,t)}% dari total</div></div>
+    <div class="ov-card reject"><div class="ov-label">Reject</div><div class="ov-value">${c.REJECT}</div><div class="ov-pct">${pct(c.REJECT,t)}% dari total</div></div>
+    <div class="ov-card approved"><div class="ov-label">Approved</div><div class="ov-value">${c.APPROVED}</div><div class="ov-pct">${pct(c.APPROVED,t)}% dari total</div></div>
+    <div class="ov-card miss"><div class="ov-label">Miss Level</div><div class="ov-value">${c['MISS LEVEL']}</div><div class="ov-pct">${pct(c['MISS LEVEL'],t)}% dari total</div></div>
   `;
 }
 
-// ── HELPERS ────────────────────────────────────────────────────────────────
-function normTele(s){ return (s||'').trim().toUpperCase().replace(/\s+/g,' ') || 'UNKNOWN'; }
-function parseMoney(s){ return parseInt((s||'').toString().replace(/[^\d]/g,'')) || 0; }
-function fmtMoney(n){
-  if(n >= 1e9)  return 'Rp ' + (n/1e9).toFixed(2) + ' M';
-  if(n >= 1e6)  return 'Rp ' + (n/1e6).toFixed(1) + ' jt';
-  if(n > 0)     return 'Rp ' + n.toLocaleString('id');
-  return '—';
+function renderPencairan(data) {
+  const gl = data.filter(r => r[3]==='GOLIVE');
+  const sum = (arr) => arr.reduce((s,r) => s+r[4], 0);
+  document.getElementById('pencairan-bar').innerHTML = `
+    <div class="pencairan-item"><div class="pencairan-lbl">Total Pencairan</div><div class="pencairan-val">${fmtRp(sum(gl))}</div></div>
+    <div class="pencairan-sep"></div>
+    <div class="pencairan-item"><div class="pencairan-lbl">Motor</div><div class="pencairan-val" style="color:#60a5fa">${fmtRp(sum(gl.filter(r=>r[1]==='MOTOR')))}</div></div>
+    <div class="pencairan-item"><div class="pencairan-lbl">Mobil</div><div class="pencairan-val" style="color:#4ade80">${fmtRp(sum(gl.filter(r=>r[1]==='MOBIL')))}</div></div>
+    <div class="pencairan-sep"></div>
+    <div class="pencairan-item"><div class="pencairan-lbl">Internal</div><div class="pencairan-val" style="color:#c084fc">${fmtRp(sum(gl.filter(r=>r[6]==='INTERNAL')))}</div></div>
+    <div class="pencairan-item"><div class="pencairan-lbl">External</div><div class="pencairan-val" style="color:#94a3b8">${fmtRp(sum(gl.filter(r=>r[6]==='EXTERNAL')))}</div></div>
+  `;
 }
 
-// ── UI ─────────────────────────────────────────────────────────────────────
-function showLoader(v){ document.getElementById('loader').classList.toggle('hidden',!v); }
-function showErr(msg){
-  const b = document.getElementById('err-banner');
-  b.style.display = 'block';
-  b.innerHTML = `<b>⚠️ Gagal mengambil data</b><br>${msg}<br><small>Pastikan GSheet sudah di-share "Anyone with the link can view"</small>`;
+function computeStats(data, name) {
+  const rows = data.filter(r => r[5] === name);
+  return {
+    motorInt: rows.filter(r => r[1]==='MOTOR' && r[3]==='GOLIVE' && r[6]==='INTERNAL').length,
+    motorExt: rows.filter(r => r[1]==='MOTOR' && r[3]==='GOLIVE' && r[6]==='EXTERNAL').length,
+    mobilGL:  rows.filter(r => r[1]==='MOBIL' && r[3]==='GOLIVE').length,
+    mobilAmt: rows.filter(r => r[1]==='MOBIL' && r[3]==='GOLIVE').reduce((s,r) => s+r[4], 0),
+    all: rows,
+  };
 }
-function hideErr(){ document.getElementById('err-banner').style.display='none'; }
 
-// ── INIT ───────────────────────────────────────────────────────────────────
-loadAll();
+function renderTeleCards(data) {
+  // Kumpulkan semua tele yang ada di data + TARGETS
+  const teleSet = new Set([...Object.keys(TARGETS), ...data.map(r => r[5]).filter(t => t)]);
+  const teles = [...teleSet].filter(t => TARGETS[t]); // hanya yang ada di TARGETS
+  const grid = document.getElementById('tele-grid');
+  grid.innerHTML = '';
+
+  const ranked = teles.map(n => {
+    const s = computeStats(data, n);
+    return { n, tot: s.motorInt + s.motorExt + s.mobilGL };
+  }).sort((a,b) => b.tot - a.tot);
+  const rankMap = {};
+  ranked.forEach((r,i) => rankMap[r.n] = i+1);
+
+  teles.sort((a,b) => rankMap[a] - rankMap[b]).forEach(name => {
+    const s = computeStats(data, name);
+    const tgt = TARGETS[name];
+    const color = TELE_COLORS[name] || '#64748b';
+    const pMI = tgt.motorInt ? (s.motorInt/tgt.motorInt)*100 : 0;
+    const pME = tgt.motorExt ? (s.motorExt/tgt.motorExt)*100 : 0;
+    const pMB = tgt.mobilAmt ? (s.mobilAmt/tgt.mobilAmt)*100 : 0;
+    const cc = p => p>=100?'pct-green':p>=70?'pct-orange':'pct-red';
+    const chipC = { GOLIVE:'#22c55e', CANCEL:'#f97316', REJECT:'#ef4444', APPROVED:'#a855f7', 'MISS LEVEL':'#eab308' };
+    const chips = {};
+    s.all.filter(r => r[3] !== 'GOLIVE').forEach(r => chips[r[3]] = (chips[r[3]]||0)+1);
+
+    grid.innerHTML += `
+      <div class="tele-card">
+        <div class="tele-header">
+          <div class="tele-name-row">
+            <div class="tele-avatar" style="background:linear-gradient(135deg,${color},${color}88)">${name[0]}</div>
+            <div><div class="tele-name">${name}</div><div class="tele-spv">Rank #${rankMap[name]}</div></div>
+          </div>
+        </div>
+        <div class="ach-section">
+          <div class="ach-row">
+            <span class="ach-icon">🏍️</span><span class="ach-label">Motor INT</span>
+            <span class="ach-counts">${s.motorInt}/${tgt.motorInt} unit</span>
+            <span class="ach-pct ${cc(pMI)}">${pMI.toFixed(0)}%</span>
+          </div>
+          <div class="ach-bar-wrap"><div class="ach-bar-fill motor-int" style="width:${Math.min(pMI,100)}%"></div></div>
+          <div class="ach-row">
+            <span class="ach-icon">🏍️</span><span class="ach-label">Motor EXT</span>
+            <span class="ach-counts">${s.motorExt}/${tgt.motorExt} unit</span>
+            <span class="ach-pct ${cc(pME)}">${pME.toFixed(0)}%</span>
+          </div>
+          <div class="ach-bar-wrap"><div class="ach-bar-fill motor-ext" style="width:${Math.min(pME,100)}%"></div></div>
+          <div class="ach-divider"></div>
+          <div class="ach-row">
+            <span class="ach-icon">🚗</span><span class="ach-label">Mobil (Rp)</span>
+            <span class="ach-counts" style="font-size:9px">${fmtRp(s.mobilAmt)}</span>
+            <span class="ach-pct ${cc(pMB)}">${pMB.toFixed(0)}%</span>
+          </div>
+          <div class="ach-bar-wrap"><div class="ach-bar-fill mobil" style="width:${Math.min(pMB,100)}%"></div></div>
+          <div style="font-size:9px;color:var(--text3);font-family:var(--font-mono);margin-left:24px;margin-bottom:4px;">Target: ${fmtRp(tgt.mobilAmt)}</div>
+        </div>
+        <div class="tele-footer">
+          ${Object.entries(chips).map(([st,ct]) => `
+            <span class="tele-stat-chip"><span class="chip-dot" style="background:${chipC[st]||'#64748b'}"></span>${st}: ${ct}</span>
+          `).join('')}
+          <span class="tele-stat-chip" style="margin-left:auto;color:#4ade80">
+            <span class="chip-dot" style="background:#22c55e"></span>GL: ${s.motorInt+s.motorExt+s.mobilGL}
+          </span>
+        </div>
+      </div>
+    `;
+  });
+}
+
+function renderTable(data) {
+  const gl = data.filter(r => r[3]==='GOLIVE');
+  const tot = gl.length, tp = Math.max(1,Math.ceil(tot/PAGE_SIZE));
+  tablePage = Math.min(tablePage, tp);
+  const sl = gl.slice((tablePage-1)*PAGE_SIZE, tablePage*PAGE_SIZE);
+  document.getElementById('table-count').textContent = `${tot} transaksi`;
+  document.getElementById('table-body').innerHTML = sl.map((r,i) => `
+    <tr>
+      <td class="mono">${(tablePage-1)*PAGE_SIZE+i+1}</td>
+      <td class="tele-col" style="color:${TELE_COLORS[r[5]]||'#94a3b8'}">${r[5]}</td>
+      <td class="nama">${r[2]}</td>
+      <td><span class="prod-chip ${r[1].toLowerCase()}">${r[1]}</span></td>
+      <td><span class="src-chip ${r[6].toLowerCase()}">${r[6]}</span></td>
+      <td style="font-size:10px;color:var(--text3)">${r[7]}</td>
+      <td class="rp">${r[4]>0?fmtRp(r[4]):'-'}</td>
+      <td class="mono" style="font-size:10px">${r[0]}</td>
+      <td style="font-size:10px;color:var(--text3)">${r[8]||'-'}</td>
+      <td><span class="status-chip golive">✓ GOLIVE</span></td>
+    </tr>
+  `).join('');
+  renderPagination('page-info','page-btns',tablePage,tp,tot,p=>{tablePage=p;renderTable(data);});
+}
+
+function renderAllTable() {
+  const data = RAW_DATA.filter(r => {
+    if (currentBulan !== 'all' && monthOf(r) !== currentBulan) return false;
+    if (currentProduk !== 'all' && r[1] !== currentProduk) return false;
+    return true; // source filter TIDAK berlaku
+  });
+  const tot = data.length, tp = Math.max(1,Math.ceil(tot/PAGE_SIZE));
+  allTablePage = Math.min(allTablePage, tp);
+  const sl = data.slice((allTablePage-1)*PAGE_SIZE, allTablePage*PAGE_SIZE);
+  document.getElementById('all-table-count').textContent = `${tot} baris (source filter diabaikan)`;
+  const sk = s => s==='GOLIVE'?'golive':s==='CANCEL'?'cancel':s==='REJECT'?'reject':s==='APPROVED'?'approved':'miss';
+  document.getElementById('all-table-body').innerHTML = sl.map((r,i) => `
+    <tr>
+      <td class="mono">${(allTablePage-1)*PAGE_SIZE+i+1}</td>
+      <td class="tele-col" style="color:${TELE_COLORS[r[5]]||'#94a3b8'}">${r[5]}</td>
+      <td class="nama">${r[2]}</td>
+      <td><span class="prod-chip ${r[1].toLowerCase()}">${r[1]}</span></td>
+      <td><span class="src-chip ${r[6].toLowerCase()}">${r[6]}</span></td>
+      <td><span class="status-chip ${sk(r[3])}">${r[3]}</span></td>
+      <td class="rp">${r[4]>0?fmtRp(r[4]):'-'}</td>
+      <td class="mono" style="font-size:10px">${r[0]}</td>
+    </tr>
+  `).join('');
+  renderPagination('all-page-info','all-page-btns',allTablePage,tp,tot,p=>{allTablePage=p;renderAllTable();});
+}
+
+function renderPagination(infoId, btnsId, cur, tot, cnt, cb) {
+  document.getElementById(infoId).textContent = `Hal ${cur} dari ${tot} (${cnt} baris)`;
+  const el = document.getElementById(btnsId);
+  el.innerHTML = '';
+  const prev = mkBtn('←', cur<=1, ()=>cb(cur-1));
+  el.appendChild(prev);
+  for (let p=Math.max(1,cur-2); p<=Math.min(tot,cur+2); p++) {
+    el.appendChild(mkBtn(p, false, ()=>cb(p), p===cur));
+  }
+  el.appendChild(mkBtn('→', cur>=tot, ()=>cb(cur+1)));
+}
+function mkBtn(label, disabled, cb, active=false) {
+  const b = document.createElement('button');
+  b.className = 'page-btn' + (active?' active':'');
+  b.textContent = label; b.disabled = disabled;
+  if (!disabled) b.onclick = cb;
+  return b;
+}
+
+// ─────────────────────────────────────────────
+//  REFRESH
+// ─────────────────────────────────────────────
+function startRefreshTimer() {
+  lastRefresh = new Date(); updateRefreshLabel();
+  clearInterval(refreshTimer);
+  refreshTimer = setInterval(refreshData, 3600000);
+}
+
+async function refreshData() {
+  setBadge('loading','⏳ Refreshing...');
+  const ok = await fetchLiveData();
+  if (ok && RAW_DATA.length > 0) { buildBulanOptions(); applyFilters(); }
+  lastRefresh = new Date(); updateRefreshLabel();
+  clearInterval(refreshTimer);
+  refreshTimer = setInterval(refreshData, 3600000);
+}
+
+function updateRefreshLabel() {
+  const t = lastRefresh;
+  const s = [t.getHours(),t.getMinutes(),t.getSeconds()].map(n=>String(n).padStart(2,'0')).join(':');
+  document.getElementById('last-refresh-label').textContent = s;
+  const src = isLiveData ? '🟢 Live' : '🟡 Cached';
+  document.getElementById('last-updated-bar').textContent =
+    `${src} — Last updated: ${t.toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'})} ${s} — Auto-refresh setiap 1 jam`;
+}
+
+function pct(a,b) { return b ? (a/b*100).toFixed(1) : '0.0'; }
+function fmtRp(n) {
+  if (!n) return 'Rp 0';
+  if (n>=1e9) return 'Rp '+(n/1e9).toFixed(2)+'M';
+  if (n>=1e6) return 'Rp '+(n/1e6).toFixed(1)+' jt';
+  return 'Rp '+n.toLocaleString('id-ID');
+}
+
+window.addEventListener('DOMContentLoaded', init);
 </script>
 </body>
 </html>
