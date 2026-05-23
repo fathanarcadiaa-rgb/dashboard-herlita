@@ -1,1 +1,617 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Performance Dashboard — Network Herlita</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#f4f6f9;font-family:'Inter',sans-serif;color:#1a1d23;font-size:13px;}
 
+/* ── TOP BAR ── */
+.topbar{
+  background:#fff;border-bottom:1px solid #e5e8ef;
+  padding:12px 24px;display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:100;
+}
+.topbar-left{display:flex;align-items:center;gap:10px;}
+.topbar-logo{
+  width:32px;height:32px;border-radius:8px;
+  background:linear-gradient(135deg,#1a73e8,#0d47a1);
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-size:16px;
+}
+.topbar-title{font-size:15px;font-weight:700;color:#1a1d23;}
+.topbar-sub{font-size:11px;color:#6b7280;margin-top:1px;}
+.topbar-right{display:flex;align-items:center;gap:10px;}
+
+/* DATE PICKER PILL */
+.date-pill{
+  display:flex;align-items:center;gap:6px;
+  background:#fff;border:1px solid #d1d5db;border-radius:20px;
+  padding:6px 14px;font-size:12px;font-weight:500;color:#374151;
+  cursor:pointer;transition:border-color .15s;
+}
+.date-pill:hover{border-color:#1a73e8;}
+.date-pill svg{width:14px;height:14px;color:#6b7280;}
+
+/* SEARCH */
+.search-wrap{
+  display:flex;align-items:center;gap:6px;
+  background:#f9fafb;border:1px solid #d1d5db;border-radius:8px;
+  padding:6px 12px;
+}
+.search-wrap input{
+  border:none;background:transparent;font-size:12px;color:#374151;
+  outline:none;width:160px;font-family:'Inter',sans-serif;
+}
+.search-wrap input::placeholder{color:#9ca3af;}
+
+/* REFRESH BTN */
+.refresh-btn{
+  background:#1a73e8;color:#fff;border:none;
+  border-radius:8px;padding:7px 14px;font-size:11px;font-weight:600;
+  cursor:pointer;font-family:'Inter',sans-serif;
+  display:flex;align-items:center;gap:5px;transition:background .15s;
+}
+.refresh-btn:hover{background:#1557b0;}
+
+/* LOADER */
+#loader{
+  position:fixed;inset:0;background:rgba(244,246,249,.9);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  z-index:999;gap:12px;transition:opacity .3s;
+}
+#loader.hidden{opacity:0;pointer-events:none;}
+.spinner{
+  width:36px;height:36px;border-radius:50%;
+  border:3px solid #e5e8ef;border-top-color:#1a73e8;
+  animation:spin .7s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg);}}
+.load-txt{font-size:13px;color:#6b7280;font-weight:500;}
+
+/* ERROR */
+#err-banner{
+  display:none;margin:16px 24px 0;
+  background:#fef2f2;border:1px solid #fca5a5;border-radius:10px;
+  padding:12px 16px;font-size:12px;color:#b91c1c;
+}
+
+/* MAIN */
+main{padding:20px 24px;max-width:1600px;}
+
+/* SECTION TITLE */
+.sec-title{
+  font-size:13px;font-weight:700;color:#1a1d23;
+  display:flex;align-items:center;gap:8px;margin-bottom:14px;
+}
+.sec-title .last-upd{
+  font-size:11px;font-weight:400;color:#9ca3af;
+}
+
+/* ── OVERVIEW ROW ── */
+.overview-row{display:grid;grid-template-columns:320px 1fr 1fr;gap:14px;margin-bottom:20px;}
+
+/* NTF CARD */
+.ntf-card{
+  background:#fff;border:1px solid #e5e8ef;border-radius:12px;
+  padding:20px;display:flex;align-items:center;gap:20px;
+}
+.donut-wrap{position:relative;width:90px;height:90px;flex-shrink:0;}
+.donut-wrap svg{transform:rotate(-90deg);}
+.donut-center{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-size:17px;font-weight:700;color:#1a1d23;
+}
+.ntf-info{}
+.ntf-label{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#9ca3af;margin-bottom:4px;}
+.ntf-value{font-size:22px;font-weight:700;color:#1a1d23;letter-spacing:-.02em;}
+.ntf-rows{margin-top:10px;display:flex;flex-direction:column;gap:4px;}
+.ntf-row-item{display:flex;justify-content:space-between;gap:20px;font-size:11px;}
+.ntf-row-item span:first-child{color:#9ca3af;text-transform:uppercase;letter-spacing:.06em;font-weight:500;}
+.ntf-row-item span:last-child{font-weight:600;color:#374151;}
+.gap-neg{color:#ef4444!important;}
+
+/* KPI GROUP */
+.kpi-group{
+  background:#fff;border:1px solid #e5e8ef;border-radius:12px;
+  padding:20px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;
+}
+.kpi-item{
+  padding:0 16px;border-right:1px solid #f3f4f6;
+}
+.kpi-item:first-child{padding-left:0;}
+.kpi-item:last-child{border-right:none;}
+.kpi-lbl{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#9ca3af;margin-bottom:6px;}
+.kpi-val{font-size:28px;font-weight:700;color:#1a1d23;letter-spacing:-.03em;}
+
+/* ── TABLE SECTION ── */
+.table-card{
+  background:#fff;border:1px solid #e5e8ef;border-radius:12px;
+  overflow:hidden;margin-bottom:20px;
+}
+.table-header{
+  padding:14px 20px;border-bottom:1px solid #f3f4f6;
+  display:flex;align-items:center;justify-content:space-between;
+}
+table{width:100%;border-collapse:collapse;}
+thead th{
+  background:#f9fafb;padding:10px 16px;
+  font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;
+  color:#6b7280;text-align:left;border-bottom:1px solid #f3f4f6;white-space:nowrap;
+}
+thead th.right{text-align:right;}
+tbody td{
+  padding:12px 16px;font-size:13px;
+  border-bottom:1px solid #f9fafb;vertical-align:middle;
+}
+tbody td.right{text-align:right;}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr:hover td{background:#f9fafb;}
+tfoot td{
+  padding:10px 16px;font-size:11px;font-weight:700;
+  background:#f9fafb;border-top:1px solid #e5e8ef;color:#374151;
+}
+tfoot td.right{text-align:right;}
+
+/* NAME CELL */
+.name-cell{font-weight:600;color:#1a1d23;}
+
+/* ACHIEVEMENT BAR */
+.ach-wrap{display:flex;align-items:center;gap:8px;min-width:140px;}
+.ach-bar-track{
+  flex:1;height:20px;background:#eff6ff;border-radius:4px;overflow:hidden;
+  position:relative;
+}
+.ach-bar-fill{
+  height:100%;background:#1a73e8;border-radius:4px;
+  display:flex;align-items:center;justify-content:flex-end;padding-right:6px;
+  font-size:10px;font-weight:700;color:#fff;
+  transition:width .8s cubic-bezier(.4,0,.2,1);
+  min-width:32px;
+}
+.ach-bar-fill.over{background:#16a34a;}
+.ach-bar-fill.low{background:#f59e0b;}
+.ach-bar-fill.vlow{background:#ef4444;}
+.ach-pct{font-size:12px;font-weight:700;min-width:36px;text-align:right;}
+.ach-pct.over{color:#16a34a;}
+.ach-pct.low{color:#f59e0b;}
+.ach-pct.vlow{color:#ef4444;}
+.ach-pct.normal{color:#1a73e8;}
+
+/* STATUS CHIP */
+.chip{display:inline-flex;align-items:center;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;}
+.chip-cair{background:#dcfce7;color:#15803d;}
+.chip-onproc{background:#fef3c7;color:#b45309;}
+.chip-cancel{background:#fee2e2;color:#b91c1c;}
+.chip-reject{background:#fce7f3;color:#9d174d;}
+
+/* MONTH SELECTOR */
+.month-sel{
+  display:flex;align-items:center;gap:6px;
+  background:#fff;border:1px solid #d1d5db;border-radius:20px;
+  padding:5px 12px;font-size:12px;font-weight:500;color:#374151;
+  cursor:pointer;
+}
+.month-sel select{
+  border:none;background:transparent;font-size:12px;color:#374151;
+  font-family:'Inter',sans-serif;cursor:pointer;outline:none;
+  font-weight:500;
+}
+
+/* LIVE DOT */
+.live-dot{
+  display:inline-flex;align-items:center;gap:5px;
+  font-size:11px;color:#16a34a;font-weight:500;
+}
+.live-dot::before{
+  content:'';width:6px;height:6px;border-radius:50%;
+  background:#16a34a;animation:pulse 1.5s ease infinite;
+}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+
+/* EMPTY STATE */
+.empty{padding:40px;text-align:center;color:#9ca3af;font-size:13px;}
+
+/* RESPONSIVE */
+@media(max-width:900px){
+  .overview-row{grid-template-columns:1fr;}
+  .kpi-group{grid-template-columns:1fr 1fr;}
+  main{padding:14px;}
+}
+</style>
+</head>
+<body>
+
+<div id="loader">
+  <div class="spinner"></div>
+  <div class="load-txt">Mengambil data dari Google Sheets…</div>
+</div>
+
+<div id="err-banner"></div>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="topbar-logo">📊</div>
+    <div>
+      <div class="topbar-title">Network Herlita — Performance Dashboard</div>
+      <div class="topbar-sub">Order In · Connected to Google Sheets</div>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <div class="month-sel">
+      📅
+      <select id="month-filter" onchange="applyFilter()">
+        <option value="ALL">Semua Bulan</option>
+        <option value="Januari">Januari 2026</option>
+        <option value="Februari">Februari 2026</option>
+        <option value="Maret">Maret 2026</option>
+        <option value="April">April 2026</option>
+        <option value="Mei">Mei 2026</option>
+      </select>
+    </div>
+    <div class="search-wrap">
+      🔍 <input type="text" id="search-input" placeholder="Search Tele…" oninput="applyFilter()">
+    </div>
+    <button class="refresh-btn" onclick="loadAll()">↺ Refresh</button>
+  </div>
+</div>
+
+<main>
+
+  <!-- OVERVIEW -->
+  <div class="sec-title">
+    This Month Performance Overview
+    <span class="last-upd" id="last-upd-overview"></span>
+    <span style="margin-left:auto" class="live-dot">Live</span>
+  </div>
+
+  <div class="overview-row">
+
+    <!-- NTF DONUT -->
+    <div class="ntf-card">
+      <div class="donut-wrap">
+        <svg width="90" height="90" viewBox="0 0 90 90">
+          <circle cx="45" cy="45" r="36" fill="none" stroke="#f0f4ff" stroke-width="10"/>
+          <circle id="donut-arc" cx="45" cy="45" r="36" fill="none"
+            stroke="#1a73e8" stroke-width="10"
+            stroke-dasharray="0 226.2" stroke-linecap="round"/>
+        </svg>
+        <div class="donut-center" id="donut-pct">—</div>
+      </div>
+      <div class="ntf-info">
+        <div class="ntf-label">NTF Achievement (%)</div>
+        <div class="ntf-value" id="ntf-value">—</div>
+        <div class="ntf-rows">
+          <div class="ntf-row-item"><span>Target (Rp)</span><span id="ntf-target">—</span></div>
+          <div class="ntf-row-item"><span>Gap (Rp)</span><span id="ntf-gap" class="gap-neg">—</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- KPI GROUP 1 -->
+    <div class="kpi-group">
+      <div class="kpi-item">
+        <div class="kpi-lbl">Total Order In</div>
+        <div class="kpi-val" id="kpi-total">—</div>
+      </div>
+      <div class="kpi-item">
+        <div class="kpi-lbl">Golive / Cair</div>
+        <div class="kpi-val" id="kpi-golive" style="color:#16a34a">—</div>
+      </div>
+      <div class="kpi-item">
+        <div class="kpi-lbl">Cancel</div>
+        <div class="kpi-val" id="kpi-cancel" style="color:#f59e0b">—</div>
+      </div>
+    </div>
+
+    <!-- KPI GROUP 2 -->
+    <div class="kpi-group">
+      <div class="kpi-item">
+        <div class="kpi-lbl">Reject</div>
+        <div class="kpi-val" id="kpi-reject" style="color:#ef4444">—</div>
+      </div>
+      <div class="kpi-item">
+        <div class="kpi-lbl">Approved</div>
+        <div class="kpi-val" id="kpi-approved" style="color:#1a73e8">—</div>
+      </div>
+      <div class="kpi-item">
+        <div class="kpi-lbl">Conv. Rate</div>
+        <div class="kpi-val" id="kpi-conv" style="color:#7c3aed">—</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- PERFORMANCE TABLE -->
+  <div class="sec-title">
+    Performance By Tele
+    <span class="last-upd" id="last-upd-table"></span>
+  </div>
+
+  <div class="table-card">
+    <table>
+      <thead>
+        <tr>
+          <th>Tele Name</th>
+          <th>SPV</th>
+          <th class="right">Achievement (NTF)</th>
+          <th class="right">NTF Total (Rp)</th>
+          <th class="right">Target NTF (Rp)</th>
+          <th class="right">Total Lead</th>
+          <th class="right">Golive</th>
+          <th class="right">Cancel</th>
+          <th class="right">Reject</th>
+          <th class="right">Approved</th>
+          <th class="right">Source Internal</th>
+          <th class="right">Source External</th>
+        </tr>
+      </thead>
+      <tbody id="tele-tbody">
+        <tr><td colspan="12" class="empty">Memuat data…</td></tr>
+      </tbody>
+      <tfoot id="tele-tfoot"></tfoot>
+    </table>
+  </div>
+
+</main>
+
+<script>
+// ── CONFIG ─────────────────────────────────────────────────────────────────
+const SHEET_ID = '1cbiDyIBRRZSWyCZ-ewcYRSPkomYGzpJYfhiWHbYedOs';
+const SHEETS = {
+  orders:  'ORDER IN',
+  targets: 'TARGET PERTELE',
+};
+function csvUrl(sheet){
+  return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheet)}&cb=${Date.now()}`;
+}
+
+// ── STATE ──────────────────────────────────────────────────────────────────
+let orderRows  = [];
+let targetMap  = {}; // tele -> { targetNTF }
+
+// ── FETCH ──────────────────────────────────────────────────────────────────
+async function fetchCSV(sheet){
+  const res = await fetch(csvUrl(sheet));
+  if(!res.ok) throw new Error(`Gagal fetch ${sheet}: HTTP ${res.status}`);
+  const txt = await res.text();
+  const parsed = Papa.parse(txt, {header:true, skipEmptyLines:true});
+  return parsed.data;
+}
+
+async function loadAll(){
+  showLoader(true);
+  hideErr();
+  try {
+    const [orders, targets] = await Promise.all([
+      fetchCSV(SHEETS.orders),
+      fetchCSV(SHEETS.targets),
+    ]);
+
+    orderRows = orders.filter(r => {
+      const k = Object.keys(r)[0];
+      return (r['TANGGAL']||r[k]||'').trim() !== '';
+    });
+
+    // Build target map — cari kolom nama tele & target NTF
+    targetMap = {};
+    targets.forEach(r => {
+      // cari kolom nama (fleksibel)
+      const nameKey = Object.keys(r).find(k =>
+        k.toUpperCase().includes('TELE') || k.toUpperCase().includes('NAME') || k.toUpperCase().includes('NAMA')
+      ) || Object.keys(r)[0];
+      const ntfKey = Object.keys(r).find(k =>
+        k.toUpperCase().includes('NTF') || k.toUpperCase().includes('TARGET')
+      ) || Object.keys(r)[1];
+
+      const name = (r[nameKey]||'').trim().toUpperCase();
+      const ntf  = parseMoney(r[ntfKey]);
+      if(name) targetMap[name] = { targetNTF: ntf };
+    });
+
+    console.log('✅ Orders:', orderRows.length, '| Targets:', Object.keys(targetMap));
+    console.log('Kolom Orders:', Object.keys(orderRows[0]||{}));
+    console.log('Kolom Targets:', Object.keys(targets[0]||{}));
+    console.log('Target map:', targetMap);
+
+    const now = new Date().toLocaleString('id-ID');
+    document.getElementById('last-upd-overview').textContent = `(Last Update: ${now})`;
+    document.getElementById('last-upd-table').textContent    = `(Last Update: ${now})`;
+
+    applyFilter();
+  } catch(e){
+    showErr(e.message);
+    console.error(e);
+  } finally {
+    showLoader(false);
+  }
+}
+
+// ── FILTER ─────────────────────────────────────────────────────────────────
+function applyFilter(){
+  const month  = document.getElementById('month-filter').value;
+  const search = document.getElementById('search-input').value.trim().toUpperCase();
+
+  let rows = orderRows;
+
+  if(month !== 'ALL'){
+    rows = rows.filter(r => (r['TANGGAL']||'').toUpperCase().includes(month.toUpperCase()));
+  }
+
+  render(rows, search);
+}
+
+// ── AGGREGATE ──────────────────────────────────────────────────────────────
+function aggregate(rows){
+  const m = {};
+  rows.forEach(r => {
+    const tele = normTele(r['NAMA TELE'] || r['TELE'] || '');
+    const spv  = (r['SPV']||'').trim().toUpperCase() || '—';
+    const st   = (r['UPDATE']||'').trim().toUpperCase();
+    const pen  = parseMoney(r['PENCAIRAN']);
+    const src  = (r['SOURCE']||'').trim().toUpperCase();
+
+    if(!tele) return;
+    if(!m[tele]) m[tele] = {
+      spv, total:0, golive:0, cancel:0, reject:0, approved:0,
+      pencairan:0, internal:0, external:0
+    };
+    m[tele].total++;
+    if(st==='GOLIVE')    { m[tele].golive++;   m[tele].pencairan += pen; }
+    else if(st==='CANCEL')   m[tele].cancel++;
+    else if(st==='REJECT')   m[tele].reject++;
+    else if(st==='APPROVED') m[tele].approved++;
+    if(src==='INTERNAL') m[tele].internal++;
+    else                 m[tele].external++;
+  });
+  return m;
+}
+
+// ── RENDER ─────────────────────────────────────────────────────────────────
+function render(rows, search=''){
+  const teles = aggregate(rows);
+
+  // totals
+  const total    = rows.length;
+  const golive   = rows.filter(r=>(r['UPDATE']||'').trim().toUpperCase()==='GOLIVE').length;
+  const cancel   = rows.filter(r=>(r['UPDATE']||'').trim().toUpperCase()==='CANCEL').length;
+  const reject   = rows.filter(r=>(r['UPDATE']||'').trim().toUpperCase()==='REJECT').length;
+  const approved = rows.filter(r=>(r['UPDATE']||'').trim().toUpperCase()==='APPROVED').length;
+  const totalPen = rows.reduce((s,r) =>
+    (r['UPDATE']||'').trim().toUpperCase()==='GOLIVE' ? s+parseMoney(r['PENCAIRAN']) : s, 0);
+
+  // NTF target = sum all targets
+  const totalTarget = Object.values(targetMap).reduce((s,t) => s + (t.targetNTF||0), 0);
+  const ntfPct = totalTarget ? Math.round((totalPen/totalTarget)*100) : 0;
+  const gap = totalPen - totalTarget;
+  const convRate = total ? ((golive/total)*100).toFixed(1) : 0;
+
+  // KPIs
+  document.getElementById('kpi-total').textContent   = total;
+  document.getElementById('kpi-golive').textContent  = golive;
+  document.getElementById('kpi-cancel').textContent  = cancel;
+  document.getElementById('kpi-reject').textContent  = reject;
+  document.getElementById('kpi-approved').textContent= approved;
+  document.getElementById('kpi-conv').textContent    = convRate + '%';
+
+  // NTF
+  document.getElementById('ntf-value').textContent  = fmtMoney(totalPen);
+  document.getElementById('ntf-target').textContent = fmtMoney(totalTarget);
+  document.getElementById('donut-pct').textContent  = ntfPct + '%';
+
+  const gapEl = document.getElementById('ntf-gap');
+  gapEl.textContent = (gap >= 0 ? '▲ ' : '▼ ') + fmtMoney(Math.abs(gap));
+  gapEl.style.color = gap >= 0 ? '#16a34a' : '#ef4444';
+
+  // Donut arc
+  const circ = 2 * Math.PI * 36;
+  const dash = Math.min(ntfPct/100, 1) * circ;
+  const arc  = document.getElementById('donut-arc');
+  arc.setAttribute('stroke-dasharray', `${dash} ${circ}`);
+  arc.setAttribute('stroke', ntfPct >= 100 ? '#16a34a' : ntfPct >= 70 ? '#1a73e8' : '#f59e0b');
+
+  // TABLE
+  const tbody = document.getElementById('tele-tbody');
+  const tfoot = document.getElementById('tele-tfoot');
+  tbody.innerHTML = '';
+
+  let ft = {total:0, golive:0, cancel:0, reject:0, approved:0, pencairan:0, internal:0, external:0};
+  let totalTgt = 0;
+
+  const sorted = Object.entries(teles)
+    .filter(([name]) => !search || name.includes(search))
+    .sort((a,b) => b[1].pencairan - a[1].pencairan);
+
+  if(sorted.length === 0){
+    tbody.innerHTML = '<tr><td colspan="12" class="empty">Tidak ada data</td></tr>';
+    return;
+  }
+
+  sorted.forEach(([name, d], idx) => {
+    const tgt     = targetMap[name]?.targetNTF || 0;
+    const achPct  = tgt ? Math.round((d.pencairan/tgt)*100) : 0;
+    const achCls  = achPct >= 100 ? 'over' : achPct >= 70 ? '' : achPct >= 40 ? 'low' : 'vlow';
+    const pctCls  = achPct >= 100 ? 'over' : achPct >= 70 ? 'normal' : achPct >= 40 ? 'low' : 'vlow';
+
+    ft.total    += d.total;
+    ft.golive   += d.golive;
+    ft.cancel   += d.cancel;
+    ft.reject   += d.reject;
+    ft.approved += d.approved;
+    ft.pencairan+= d.pencairan;
+    ft.internal += d.internal;
+    ft.external += d.external;
+    totalTgt    += tgt;
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><span class="name-cell">${name}</span></td>
+      <td style="color:#6b7280">${d.spv}</td>
+      <td class="right">
+        <div class="ach-wrap">
+          <div class="ach-bar-track">
+            <div class="ach-bar-fill ${achCls}" style="width:${Math.min(achPct,100)}%">${achPct >= 15 ? achPct+'%' : ''}</div>
+          </div>
+          <span class="ach-pct ${pctCls}">${achPct}%</span>
+        </div>
+      </td>
+      <td class="right" style="font-weight:600">${fmtMoney(d.pencairan)}</td>
+      <td class="right" style="color:#6b7280">${tgt ? fmtMoney(tgt) : '—'}</td>
+      <td class="right">${d.total}</td>
+      <td class="right"><span class="chip chip-cair">${d.golive}</span></td>
+      <td class="right"><span class="chip chip-cancel">${d.cancel}</span></td>
+      <td class="right"><span class="chip chip-reject">${d.reject}</span></td>
+      <td class="right"><span class="chip chip-onproc">${d.approved}</span></td>
+      <td class="right">${d.internal}</td>
+      <td class="right">${d.external}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  const ftAch = totalTgt ? Math.round((ft.pencairan/totalTgt)*100) : 0;
+  tfoot.innerHTML = `
+    <tr>
+      <td colspan="2" style="font-weight:700">TOTAL (${sorted.length} Tele)</td>
+      <td class="right" style="font-weight:700;color:#1a73e8">${ftAch}%</td>
+      <td class="right" style="font-weight:700">${fmtMoney(ft.pencairan)}</td>
+      <td class="right">${totalTgt ? fmtMoney(totalTgt) : '—'}</td>
+      <td class="right">${ft.total}</td>
+      <td class="right">${ft.golive}</td>
+      <td class="right">${ft.cancel}</td>
+      <td class="right">${ft.reject}</td>
+      <td class="right">${ft.approved}</td>
+      <td class="right">${ft.internal}</td>
+      <td class="right">${ft.external}</td>
+    </tr>
+  `;
+}
+
+// ── HELPERS ────────────────────────────────────────────────────────────────
+function normTele(s){ return (s||'').trim().toUpperCase().replace(/\s+/g,' ') || 'UNKNOWN'; }
+function parseMoney(s){ return parseInt((s||'').toString().replace(/[^\d]/g,'')) || 0; }
+function fmtMoney(n){
+  if(n >= 1e9)  return 'Rp ' + (n/1e9).toFixed(2) + ' M';
+  if(n >= 1e6)  return 'Rp ' + (n/1e6).toFixed(1) + ' jt';
+  if(n > 0)     return 'Rp ' + n.toLocaleString('id');
+  return '—';
+}
+
+// ── UI ─────────────────────────────────────────────────────────────────────
+function showLoader(v){ document.getElementById('loader').classList.toggle('hidden',!v); }
+function showErr(msg){
+  const b = document.getElementById('err-banner');
+  b.style.display = 'block';
+  b.innerHTML = `<b>⚠️ Gagal mengambil data</b><br>${msg}<br><small>Pastikan GSheet sudah di-share "Anyone with the link can view"</small>`;
+}
+function hideErr(){ document.getElementById('err-banner').style.display='none'; }
+
+// ── INIT ───────────────────────────────────────────────────────────────────
+loadAll();
+</script>
+</body>
+</html>
