@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Network Herlita — Performance Dashboard</title>
+<title>Network Herlita — LISA</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -86,6 +86,56 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
 
 /* ── MAIN ── */
 .main { padding: 20px 24px 40px; max-width: 1600px; margin: 0 auto; }
+
+/* ── MULTI-SELECT BULAN ── */
+.month-filter-wrap { position: relative; }
+.month-filter-btn {
+  height: 34px; padding: 0 12px; font-size: 12px; font-family: var(--font);
+  border: 1px solid var(--border2); border-radius: 8px;
+  background: var(--white); color: var(--text); cursor: pointer;
+  display: flex; align-items: center; gap: 8px; white-space: nowrap;
+  min-width: 160px; justify-content: space-between;
+  transition: border-color 0.15s;
+}
+.month-filter-btn:hover, .month-filter-btn.open { border-color: var(--accent); }
+.month-filter-btn.has-selection { background: #eff6ff; color: var(--accent); border-color: var(--accent); }
+.month-chevron { font-size: 9px; color: var(--text3); transition: transform 0.2s; flex-shrink:0; }
+.month-filter-btn.open .month-chevron { transform: rotate(180deg); }
+.month-dropdown {
+  display: none; position: absolute; top: calc(100% + 6px); right: 0;
+  background: var(--white); border: 1px solid var(--border2);
+  border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  z-index: 500; min-width: 200px; overflow: hidden;
+}
+.month-dropdown.open { display: block; }
+.month-dd-header {
+  padding: 10px 14px 8px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+}
+.month-dd-title { font-size: 10px; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: 0.06em; }
+.month-dd-actions { display: flex; gap: 10px; }
+.month-dd-act { font-size: 11px; color: var(--accent); cursor: pointer; font-weight: 500; }
+.month-dd-act:hover { text-decoration: underline; }
+.month-list { max-height: 220px; overflow-y: auto; padding: 6px 0; }
+.month-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 7px 14px; cursor: pointer; font-size: 12px; color: var(--text);
+  transition: background 0.1s; user-select: none;
+}
+.month-item:hover { background: #f8fafc; }
+.month-item input[type=checkbox] { accent-color: var(--accent); width: 14px; height: 14px; cursor: pointer; flex-shrink:0; }
+.month-item.selected { color: var(--accent); font-weight: 500; background: #f0f7ff; }
+.month-dd-footer {
+  padding: 8px 14px; border-top: 1px solid var(--border);
+  display: flex; justify-content: space-between; align-items: center; gap: 8px;
+}
+.month-sel-count { font-size: 11px; color: var(--text3); }
+.btn-apply {
+  height: 28px; padding: 0 14px; font-size: 11px; font-weight: 600;
+  background: var(--accent); color: white; border: none; border-radius: 6px; cursor: pointer;
+}
+.btn-apply:hover { background: #1d4ed8; }
 
 /* ── SECTION LABEL ── */
 .section-label {
@@ -307,14 +357,31 @@ table.perf-table tbody tr.total-row td.name { font-size: 12px; }
   <div class="topbar-left">
     <div class="app-icon">NH</div>
     <div>
-      <div class="app-title">Network Herlita — Performance Dashboard</div>
-      <div class="app-sub" id="topbar-sub">Order In · Connected to Google Sheets</div>
+      <div class="app-title">Network Herlita — LISA</div>
+      <div class="app-sub" id="topbar-sub">SPV Lisa · Connecting...</div>
     </div>
   </div>
   <div class="topbar-right">
-    <select class="filter-select" id="filter-bulan" onchange="applyFilters()">
-      <option value="all">Semua Bulan</option>
-    </select>
+    <div class="month-filter-wrap">
+      <button class="month-filter-btn" id="month-btn" onclick="toggleMonthDropdown()">
+        <span id="month-btn-label">📅 Semua Bulan</span>
+        <span class="month-chevron">▼</span>
+      </button>
+      <div class="month-dropdown" id="month-dropdown">
+        <div class="month-dd-header">
+          <span class="month-dd-title">Pilih Bulan</span>
+          <div class="month-dd-actions">
+            <span class="month-dd-act" onclick="selectAllMonths()">Semua</span>
+            <span class="month-dd-act" onclick="clearMonths()">Reset</span>
+          </div>
+        </div>
+        <div class="month-list" id="month-list"></div>
+        <div class="month-dd-footer">
+          <span class="month-sel-count" id="month-sel-count">Semua bulan</span>
+          <button class="btn-apply" onclick="applyMonthFilter()">Terapkan</button>
+        </div>
+      </div>
+    </div>
     <input class="search-input" id="search-tele" type="text" placeholder="🔍 Search Tele..." oninput="applyFilters()">
     <div class="live-dot" id="live-dot"></div>
     <span class="live-label" id="live-label">Loading...</span>
@@ -325,7 +392,7 @@ table.perf-table tbody tr.total-row td.name { font-size: 12px; }
 <!-- MAIN -->
 <div class="main">
   <div class="fetch-banner" id="fetch-banner">
-    ⚠️ Gagal fetch live data. Pastikan sheet sudah "Anyone with the link = Viewer" dan nama tab sheet sudah benar.
+    ⚠️ Gagal fetch data. Jika sheet <b>Restricted</b>: isi APPS_SCRIPT_URL di kode dengan URL hasil deploy Apps Script. Jika sheet <b>Public</b>: pastikan nama tab sheet sudah benar.
   </div>
 
   <!-- OVERVIEW: 3 CIRCLES -->
@@ -502,36 +569,49 @@ table.perf-table tbody tr.total-row td.name { font-size: 12px; }
 
 <script>
 // ─────────────────────────────────────────────
-//  CONFIG
+//  CONFIG — GitHub Pages + Apps Script
 // ─────────────────────────────────────────────
-const SHEET_ID          = '1cbiDyIBRRZSWyCZ-ewcYRSPkomYGzpJYfhiWHbYedOs';
-const SHEET_NAME_ORDER  = 'ORDER IN';
-const SHEET_NAME_TARGET = 'TARGET PERTELE';
+
+// GANTI URL INI SETELAH DEPLOY APPS SCRIPT:
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzzYui30I9NPp4jlxRBv6SvNSJ1l7XewdJcH0zQUSqudHigcpaHFwxiUbosDDjJXjYrTA/exec';  // PASTE LISA APPS SCRIPT URL HERE
+
+const SHEET_ID          = '';  // kosongkan (pakai Apps Script)
+const SHEET_NAME_ORDER  = 'Data Order In';
+const SHEET_NAME_TARGET = 'Target';
+
+// Mode detection
+const USE_APPS_SCRIPT = APPS_SCRIPT_URL.length > 0;
+const FETCH_URL = APPS_SCRIPT_URL;
+
+if (!USE_APPS_SCRIPT) {
+  console.error('❌ APPS_SCRIPT_URL belum diisi! Deploy Apps Script dulu, copy URL-nya ke config.');
+}
 
 function sheetUrl(name) {
   return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(name)}`;
 }
 
-// Nama kolom ORDER IN — exact match dulu, fallback partial
+// Nama kolom ORDER IN — sesuai sheet "Data Order In"
 const COL_ORDER = {
   tanggal:   ['TANGGAL'],
   produk:    ['PRODUCK','PRODUK','PRODUCT'],
   nama:      ['NAMA KONSUMEN','NAMA','KONSUMEN'],
-  status:    ['UPDATE'],   // ← STATUS diambil dari kolom UPDATE
+  status:    ['UPDATE'],         // status diambil dari kolom UPDATE
   pencairan: ['PENCAIRAN'],
-  tele:      ['NAMA TELE','TELE'],
+  tele:      ['NAMA TELE','TELE','NAMA AMM'],
   spv:       ['SPV'],
-  source:    ['SOURCE'],
+  source:    ['SOURCE','SUMBER'],
   merk:      ['MERK/TIPE/TAHUN','MERK/TIPE','MERK'],
   leasing:   ['LEASING'],
 };
 
-// Nama kolom TARGET PERTELE
+// Nama kolom sheet Target
 const COL_TARGET = {
   tele:      ['NAMA TELE','TELE'],
   motorInt:  ['TARGET UNIT INTERNAL','UNIT INTERNAL'],
   motorExt:  ['TARGET UNIT EXTERNAL','UNIT EXTERNAL'],
   mobilAmt:  ['TARGET AMOUNT MOBIL','AMOUNT MOBIL','TARGET MOBIL'],
+  spv:       ['SPV'],
 };
 
 // Status normalization map
@@ -557,10 +637,11 @@ const TELE_COLORS = {
 //  STATE
 // ─────────────────────────────────────────────
 let RAW_DATA   = [];
-let TARGETS    = {};   // {TELE: {motorInt, motorExt, mobilAmt}}
+let TARGETS    = {};
 let isLive     = false;
-let currentBulan = 'all';
-let searchTele   = '';
+let selectedMonths = new Set(); // kosong = semua bulan
+let allMonths  = [];            // list bulan yang tersedia
+let searchTele = '';
 let lastRefresh  = null;
 let refreshTimer = null;
 
@@ -689,7 +770,7 @@ function parseTargetCSV(text) {
 }
 
 // ─────────────────────────────────────────────
-//  FETCH
+//  FETCH — support Apps Script & direct mode
 // ─────────────────────────────────────────────
 async function fetchSheet(name) {
   const res = await fetch(sheetUrl(name), {cache:'no-cache'});
@@ -701,19 +782,40 @@ async function fetchSheet(name) {
 
 async function fetchAll() {
   try {
-    const [orderText, targetText] = await Promise.all([
-      fetchSheet(SHEET_NAME_ORDER),
-      fetchSheet(SHEET_NAME_TARGET),
-    ]);
-    const parsed = parseOrderCSV(orderText);
-    if (parsed.length===0) throw new Error('0 rows parsed dari ORDER IN — cek nama kolom');
-    RAW_DATA = parsed;
-    const parsedTarget = parseTargetCSV(targetText);
-    if (Object.keys(parsedTarget).length > 0) TARGETS = parsedTarget;
+    let orders, targets;
+
+    if (USE_APPS_SCRIPT) {
+      // ── MODE A/B: Apps Script ─────────────────────────────
+      // MODE A: FETCH_URL = URL halaman ini sendiri (relative)
+      // MODE B: FETCH_URL = APPS_SCRIPT_URL yang diisi manual
+      const res = await fetch(FETCH_URL + '?action=all', {cache:'no-cache'});
+      if (!res.ok) throw new Error(`Apps Script HTTP ${res.status}`);
+      const json = await res.json();
+      if (json.error) throw new Error('Apps Script error: ' + json.error);
+      orders  = json.orders  || [];
+      targets = json.targets || {};
+
+    } else {
+      // ── MODE 2: Direct Google Sheets (sheet harus public) ─
+      const [orderText, targetText] = await Promise.all([
+        fetchSheet(SHEET_NAME_ORDER),
+        fetchSheet(SHEET_NAME_TARGET),
+      ]);
+      orders  = parseOrderCSV(orderText);
+      targets = parseTargetCSV(targetText);
+    }
+
+    if (orders.length === 0) throw new Error('0 rows — cek nama sheet & kolom');
+
+    RAW_DATA = orders;
+    if (Object.keys(targets).length > 0) TARGETS = targets;
+
     isLive = true;
-    setLive(true, `Live — ${parsed.length} baris`);
+    const mode = USE_APPS_SCRIPT ? '🔒 Script' : '🌐 Direct';
+    setLive(true, `${mode} — ${orders.length} baris`);
     document.getElementById('fetch-banner').classList.remove('show');
     return true;
+
   } catch(e) {
     console.warn('fetchAll gagal:', e.message);
     isLive = false;
@@ -753,19 +855,103 @@ function hideLoader() {
 
 function buildBulanOptions() {
   const order = BULAN_ID.slice(1);
-  const months = [...new Set(RAW_DATA.map(r=>r.bulan).filter(Boolean))].sort((a,b)=>{
+  allMonths = [...new Set(RAW_DATA.map(r=>r.bulan).filter(Boolean))].sort((a,b)=>{
     const [ma,ya]=a.split(' '),[mb,yb]=b.split(' ');
     return ya!==yb?+ya-+yb:order.indexOf(ma)-order.indexOf(mb);
   });
-  const sel = document.getElementById('filter-bulan');
-  while(sel.options.length>1) sel.remove(1);
-  months.forEach(m=>{ const o=document.createElement('option'); o.value=m; o.textContent=m; sel.appendChild(o); });
-  if (months.length) { sel.value=months[months.length-1]; currentBulan=months[months.length-1]; }
+
+  // Default: pilih bulan terakhir saja
+  selectedMonths = new Set([allMonths[allMonths.length-1]]);
+  renderMonthList();
+  updateMonthBtn();
 }
 
+function renderMonthList() {
+  const list = document.getElementById('month-list');
+  list.innerHTML = '';
+  allMonths.forEach(m => {
+    const checked = selectedMonths.has(m);
+    const div = document.createElement('div');
+    div.className = 'month-item' + (checked?' selected':'');
+    div.innerHTML = `<input type="checkbox" ${checked?'checked':''} data-month="${m}"> ${m}`;
+    div.onclick = (e) => {
+      if (e.target.tagName==='INPUT') return; // handled by change
+      const cb = div.querySelector('input');
+      cb.checked = !cb.checked;
+      toggleMonth(m, cb.checked, div);
+    };
+    div.querySelector('input').onchange = (e) => toggleMonth(m, e.target.checked, div);
+    list.appendChild(div);
+  });
+  updateSelCount();
+}
+
+function toggleMonth(m, checked, div) {
+  if (checked) selectedMonths.add(m);
+  else selectedMonths.delete(m);
+  div.className = 'month-item' + (checked?' selected':'');
+  updateSelCount();
+}
+
+function updateSelCount() {
+  const cnt = selectedMonths.size;
+  const total = allMonths.length;
+  document.getElementById('month-sel-count').textContent =
+    cnt===0||cnt===total ? 'Semua bulan' : `${cnt} dari ${total} bulan`;
+}
+
+function selectAllMonths() {
+  selectedMonths = new Set(allMonths);
+  renderMonthList();
+}
+function clearMonths() {
+  selectedMonths.clear();
+  renderMonthList();
+}
+
+function toggleMonthDropdown() {
+  const btn = document.getElementById('month-btn');
+  const dd  = document.getElementById('month-dropdown');
+  btn.classList.toggle('open');
+  dd.classList.toggle('open');
+}
+
+function applyMonthFilter() {
+  // tutup dropdown
+  document.getElementById('month-btn').classList.remove('open');
+  document.getElementById('month-dropdown').classList.remove('open');
+  updateMonthBtn();
+  applyFilters();
+}
+
+function updateMonthBtn() {
+  const cnt   = selectedMonths.size;
+  const total = allMonths.length;
+  const lbl   = document.getElementById('month-btn-label');
+  const btn   = document.getElementById('month-btn');
+  if (cnt===0||cnt===total) {
+    lbl.textContent = '📅 Semua Bulan';
+    btn.classList.remove('has-selection');
+  } else if (cnt===1) {
+    lbl.textContent = '📅 '+[...selectedMonths][0];
+    btn.classList.add('has-selection');
+  } else {
+    lbl.textContent = `📅 ${cnt} Bulan`;
+    btn.classList.add('has-selection');
+  }
+}
+
+// Tutup dropdown kalau klik di luar
+document.addEventListener('click', e => {
+  const wrap = document.querySelector('.month-filter-wrap');
+  if (wrap && !wrap.contains(e.target)) {
+    document.getElementById('month-btn').classList.remove('open');
+    document.getElementById('month-dropdown').classList.remove('open');
+  }
+});
+
 function applyFilters() {
-  currentBulan = document.getElementById('filter-bulan').value;
-  searchTele   = document.getElementById('search-tele').value.trim().toUpperCase();
+  searchTele = document.getElementById('search-tele').value.trim().toUpperCase();
   renderAll();
 }
 
@@ -773,8 +959,9 @@ function applyFilters() {
 //  FILTER
 // ─────────────────────────────────────────────
 function getFiltered() {
+  const useAll = selectedMonths.size===0 || selectedMonths.size===allMonths.length;
   return RAW_DATA.filter(r=>{
-    if (currentBulan!=='all'&&r.bulan!==currentBulan) return false;
+    if (!useAll && !selectedMonths.has(r.bulan)) return false;
     return true;
   });
 }
@@ -920,15 +1107,26 @@ function renderOverview(data) {
 }
 
 function renderTable(data) {
-  // Ambil semua tele dari data (filter search)
-  let teles = [...new Set(data.map(r=>r.tele))].filter(t=>t);
-  if (searchTele) teles = teles.filter(t=>t.includes(searchTele));
+  // Gabungkan: tele dari data + SEMUA tele dari TARGETS (biar keliatan meski 0 lead)
+  const teleFromData    = new Set(data.map(r=>r.tele).filter(t=>t));
+  const teleFromTargets = new Set(Object.keys(TARGETS));
+  const allTeles        = [...new Set([...teleFromTargets, ...teleFromData])];
 
-  // Hitung stats per tele
+  // Filter search
+  const teles = searchTele
+    ? allTeles.filter(t=>t.includes(searchTele))
+    : allTeles;
+
+  // Hitung stats (row dengan 0 lead tetap masuk karena computeTeleStats handle empty)
   const stats = teles.map(t=>computeTeleStats(data,t));
 
-  // Sort by golive desc
-  stats.sort((a,b)=>b.golive-a.golive);
+  // Sort: yang ada lead dulu (golive desc), lalu yang 0 lead (alphabetical)
+  stats.sort((a,b)=>{
+    if (a.total===0 && b.total>0) return 1;
+    if (b.total===0 && a.total>0) return -1;
+    if (a.total===0 && b.total===0) return a.tele.localeCompare(b.tele);
+    return b.golive-a.golive;
+  });
 
   // Totals
   const tot = {
@@ -948,36 +1146,34 @@ function renderTable(data) {
   tbody.innerHTML = '';
 
   for (const s of stats) {
-    const color = TELE_COLORS[s.tele]||'#64748b';
-    const tr = document.createElement('tr');
+    const color   = TELE_COLORS[s.tele]||'#64748b';
+    const noLead  = s.total === 0;
+    const tr      = document.createElement('tr');
+    if (noLead) tr.style.cssText = 'opacity:0.6;background:#fafafa';
     tr.innerHTML = `
       <td class="name">
         <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${color};margin-right:6px;vertical-align:middle"></span>
         ${s.tele}
+        ${noLead?'<span style="font-size:9px;font-weight:600;color:#94a3b8;margin-left:6px;background:#f1f5f9;padding:1px 6px;border-radius:4px">NO LEAD</span>':''}
       </td>
       <td class="spv">${s.spv}</td>
 
-      <!-- Motor INT -->
       <td class="center col-sep-left" style="min-width:130px">
         ${achCell(s.motorIntGL, s.tgtMotorInt, s.pctMotorInt, 'unit', '#3b82f6')}
       </td>
-      <!-- Motor EXT -->
       <td class="center" style="min-width:130px">
         ${achCell(s.motorExtGL, s.tgtMotorExt, s.pctMotorExt, 'unit', '#8b5cf6')}
       </td>
-      <!-- Mobil -->
       <td class="center" style="min-width:130px;border-right:2px solid #e2e8f0">
         ${achCell(s.mobilGL, null, s.pctMobil, 'unit', '#22c55e', s.mobilGL+' unit')}
       </td>
 
-      <!-- NTF Amount -->
       <td class="center" style="min-width:110px">
         <span style="font-weight:700;color:#15803d;font-size:12px">${fmtRp(s.mobilAmt)}</span>
         ${s.tgtMobilAmt>0?`<br><span style="font-size:10px;color:#94a3b8">/ ${fmtRp(s.tgtMobilAmt)}</span>`:''}
       </td>
-      <!-- Gap Mobil -->
       <td class="center" style="border-right:2px solid #e2e8f0;min-width:90px">
-        ${s.gapMobil!==null ? `<span class="gap-val ${s.gapMobil>=0?'pos':'neg'}">${s.gapMobil>=0?'+':''}${fmtRp(s.gapMobil)}</span>` : '<span class="gap-val zero">—</span>'}
+        ${s.gapMobil!==null?`<span class="gap-val ${s.gapMobil>=0?'pos':'neg'}">${s.gapMobil>=0?'+':''}${fmtRp(s.gapMobil)}</span>`:'<span class="gap-val zero">—</span>'}
       </td>
 
       <td class="num" style="border-right:1px solid #e2e8f0">${s.total}</td>
@@ -1051,7 +1247,7 @@ function startTimer() {
 async function refreshAll() {
   setLive(false,'Refreshing...');
   await fetchAll();
-  if (RAW_DATA.length>0) { buildBulanOptions(); applyFilters(); }
+  if (RAW_DATA.length>0) { buildBulanOptions(); renderMonthList(); updateMonthBtn(); applyFilters(); }
   lastRefresh=new Date(); updateTimestamp();
   clearInterval(refreshTimer);
   refreshTimer=setInterval(refreshAll,3600000);
@@ -1066,7 +1262,8 @@ function updateTimestamp() {
   el('last-update-label').textContent=label;
   el('perf-update-label').textContent=label;
   el('footer-bar').textContent=`${isLive?'🟢 Live':'🟡 Cached'} — Auto-refresh setiap 1 jam — Last update: ${d} ${s}`;
-  el('topbar-sub').textContent=`Order In · ${isLive?'Connected to':'Disconnected from'} Google Sheets`;
+  const modeStr = USE_APPS_SCRIPT ? '🔒 Apps Script' : '🌐 Direct Sheet';
+  el('topbar-sub').textContent=`SPV Lisa · ${isLive?`${modeStr} — Connected`:'Disconnected'}`;
 }
 
 // ─────────────────────────────────────────────
