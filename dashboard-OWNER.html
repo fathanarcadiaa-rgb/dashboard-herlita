@@ -417,7 +417,7 @@ table.perf-table tbody tr.total-row td.name { font-size: 12px; }
 // ─────────────────────────────────────────────
 
 // GANTI URL INI SETELAH DEPLOY APPS SCRIPT:
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwRKNKdrMilRcrkFQ4QGzyGnoBEEcfwfUNyN6y_TRSUQgdBb5u9lxGSYQ9aVY58E2IW/exec';  // https://script.google.com/macros/s/XXXX.../exec
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz9PsqZ7cSkSEyfWZwR-LsxNZ4RLji5qHNKla16yfn1amaqGq8rPItLZDLjPPzcasbp/exec';  // https://script.google.com/macros/s/XXXX.../exec
 
 const SHEET_ID          = '';  // kosongkan (pakai Apps Script)
 const SHEET_NAME_ORDER  = 'Data Order In';
@@ -1294,11 +1294,13 @@ function updateTimestamp() {
   const s=[t.getHours(),t.getMinutes(),t.getSeconds()].map(n=>String(n).padStart(2,'0')).join(':');
   const d=t.toLocaleDateString('id-ID',{day:'2-digit',month:'numeric',year:'numeric'});
   const label=`(Last Update: ${d.replace(/\//g,'/')}, ${s})`;
-  el('last-update-label').textContent=label;
-  el('perf-update-label').textContent=label;
-  el('footer-bar').textContent=`${isLive?'🟢 Live':'🟡 Cached'} — Auto-refresh setiap 1 jam — Last update: ${d} ${s}`;
+  // Safe set — cek element exists dulu
+  const safeSet = (id, val) => { const e = document.getElementById(id); if(e) e.textContent = val; };
+  safeSet('last-update-label', label);
+  safeSet('perf-update-label', label);
+  safeSet('footer-bar', `${isLive?'🟢 Live':'🟡 Cached'} — Auto-refresh setiap 1 jam — Last update: ${d} ${s}`);
   const modeStr = USE_APPS_SCRIPT ? '🔒 Apps Script' : '🌐 Direct Sheet';
-  el('topbar-sub').textContent=`Golive Only View · ${isLive?`${modeStr} — Connected`:'Disconnected'}`;
+  safeSet('topbar-sub', `Golive Only View · ${isLive?`${modeStr} — Connected`:'Disconnected'}`);
 }
 
 // ─────────────────────────────────────────────
