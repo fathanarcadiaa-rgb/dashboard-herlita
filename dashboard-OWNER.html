@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Network Herlita — OWNER</title>
+<title>Network Herlita — Performance Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -37,11 +37,15 @@
 body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; font-size: 13px; }
 
 
-/* ── SPV SECTIONS (OWNER) ── */
+/* ── SPV SECTIONS ── */
 .spv-section { margin-bottom: 32px; }
-.spv-block { background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 24px; box-shadow: var(--shadow); }
-.spv-block-header { font-size: 18px; font-weight: 700; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 2px solid var(--border); display: flex; align-items: center; gap: 10px; }
-.spv-dot { display: inline-block; width: 14px; height: 14px; border-radius: 50%; }
+.spv-block-header {
+  font-size: 15px; font-weight: 700;
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 14px; padding-bottom: 10px;
+  border-bottom: 2px solid var(--border);
+}
+.spv-dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; flex-shrink:0; }
 .spv-lisa { background: #ef4444; }
 .spv-desi { background: #3b82f6; }
 .spv-sari { background: #f59e0b; }
@@ -367,8 +371,8 @@ table.perf-table tbody tr.total-row td.name { font-size: 12px; }
   <div class="topbar-left">
     <div class="app-icon">NH</div>
     <div>
-      <div class="app-title">Network Herlita — OWNER</div>
-      <div class="app-sub" id="topbar-sub">Golive Only View · Connecting...</div>
+      <div class="app-title">Network Herlita — Performance Dashboard</div>
+      <div class="app-sub" id="topbar-sub">SPV Lisa · Connecting...</div>
     </div>
   </div>
   <div class="topbar-right">
@@ -405,7 +409,7 @@ table.perf-table tbody tr.total-row td.name { font-size: 12px; }
     ⚠️ Gagal fetch data. Jika sheet <b>Restricted</b>: isi APPS_SCRIPT_URL di kode dengan URL hasil deploy Apps Script. Jika sheet <b>Public</b>: pastikan nama tab sheet sudah benar.
   </div>
 
-  <!-- SPV SECTIONS — rendered by JS -->
+  <!-- SPV SECTIONS (rendered by JS) -->
   <div id="spv-sections"></div>
 
     <div class="footer" id="footer-bar"></div>
@@ -814,205 +818,252 @@ function getFiltered() {
 //  COMPUTE STATS PER TELE
 // ─────────────────────────────────────────────
 
-
 function renderAll() {
-  const data = getFiltered().filter(r => r.status === 'GOLIVE'); // OWNER: golive only
-  renderSPVSections(data);
+  const allData = getFiltered();
+  const goliveOnly = allData.filter(r => r.status === 'GOLIVE');
+  renderSPVSections(goliveOnly, allData);
   updateTimestamp();
 }
 
-function renderSPVSections(data) {
-  // Group data by SPV
-  const spvMap = {};
-  for (const r of data) {
-    if (!spvMap[r.spv]) spvMap[r.spv] = [];
-    spvMap[r.spv].push(r);
-  }
-
-  // Also include SPVs from TARGETS even if no golive
-  const allSpvs = [...new Set([
-    ...Object.keys(spvMap),
-    ...Object.values(TARGETS).map(t => t.spv).filter(Boolean)
-  ])].sort();
+function renderSPVSections(goliveData, allData) {
+  // Build SPV list from targets + data
+  const spvFromTargets = [...new Set(Object.values(TARGETS).map(t => t.spv).filter(Boolean))];
+  const spvFromData = [...new Set(goliveData.map(r => r.spv).filter(Boolean))];
+  const allSpvs = [...new Set([...spvFromTargets, ...spvFromData])].sort();
 
   const container = document.getElementById('spv-sections');
   if (!container) return;
   container.innerHTML = '';
 
   for (const spv of allSpvs) {
-    const spvData = spvMap[spv] || [];
+    const spvGolive = goliveData.filter(r => r.spv === spv);
+    const spvAll = allData.filter(r => r.spv === spv);
     const spvTargets = {};
     for (const [tele, t] of Object.entries(TARGETS)) {
-      if ((t.spv || '').toUpperCase() === spv) spvTargets[tele] = t;
+      if ((t.spv||'').toUpperCase() === spv) spvTargets[tele] = t;
     }
 
-    const section = document.createElement('div');
-    section.className = 'spv-section';
-    section.innerHTML = renderSPVSection(spv, spvData, spvTargets);
-    container.appendChild(section);
+    const wrapper = document.createElement('div');
+    wrapper.className = 'spv-section';
+    wrapper.innerHTML = buildSPVSection(spv, spvGolive, spvAll, spvTargets);
+    container.appendChild(wrapper);
   }
 }
 
-function renderSPVSection(spv, data, spvTargets) {
-  const teleFromData = new Set(data.map(r => r.tele).filter(Boolean));
-  const teleFromTargets = new Set(Object.keys(spvTargets));
-  const allTeles = [...new Set([...teleFromTargets, ...teleFromData])].sort();
+function buildSPVSection(spv, goliveData, allData, spvTargets) {
+  const allTeles = [...new Set([
+    ...Object.keys(spvTargets),
+    ...goliveData.map(r => r.tele).filter(Boolean)
+  ])].sort();
 
-  // Overview metrics
-  const glAll = data;
-  const total = data.length;
-  const glMotor = glAll.filter(r=>r.produk==='MOTOR').length;
-  const glMobil = glAll.filter(r=>r.produk==='MOBIL').length;
-  const achMotorInt = glAll.filter(r=>r.produk==='MOTOR'&&r.source==='INTERNAL').length;
-  const achMotorExt = glAll.filter(r=>r.produk==='MOTOR'&&r.source==='EXTERNAL').length;
-  const achMobilAmt = glAll.filter(r=>r.produk==='MOBIL').reduce((s,r)=>s+r.pencairan,0);
+  // ── Achievement metrics (golive only) ──
+  const achMotorInt = goliveData.filter(r=>r.produk==='MOTOR'&&r.source==='INTERNAL').length;
+  const achMotorExt = goliveData.filter(r=>r.produk==='MOTOR'&&r.source==='EXTERNAL').length;
+  const achMobilAmt = goliveData.filter(r=>r.produk==='MOBIL').reduce((s,r)=>s+r.pencairan,0);
+  const glMotor = goliveData.filter(r=>r.produk==='MOTOR').length;
+  const glMobil = goliveData.filter(r=>r.produk==='MOBIL').length;
 
   const tgtMotorInt = allTeles.reduce((s,t)=>s+(spvTargets[t]?.motorInt||0),0);
   const tgtMotorExt = allTeles.reduce((s,t)=>s+(spvTargets[t]?.motorExt||0),0);
   const tgtMobilAmt = allTeles.reduce((s,t)=>s+(spvTargets[t]?.mobilAmt||0),0);
 
-  const pctMI = tgtMotorInt>0 ? Math.min((achMotorInt/tgtMotorInt)*100,999) : 0;
-  const pctME = tgtMotorExt>0 ? Math.min((achMotorExt/tgtMotorExt)*100,999) : 0;
-  const pctMB = tgtMobilAmt>0 ? Math.min((achMobilAmt/tgtMobilAmt)*100,999) : 0;
+  const CIRC = 2*Math.PI*39;
+  const pctMI = tgtMotorInt>0?Math.min((achMotorInt/tgtMotorInt)*100,999):0;
+  const pctME = tgtMotorExt>0?Math.min((achMotorExt/tgtMotorExt)*100,999):0;
+  const pctMB = tgtMobilAmt>0?Math.min((achMobilAmt/tgtMobilAmt)*100,999):0;
   const gapMI = achMotorInt - tgtMotorInt;
   const gapME = achMotorExt - tgtMotorExt;
   const gapMB = achMobilAmt - tgtMobilAmt;
 
-  const CIRC = 2*Math.PI*39;
-  function circSVG(pct, color) {
+  function circHTML(pct, color, fillId, pctId) {
     const c = pct>=100?'#16a34a':pct>=70?'#ea580c':color;
     const offset = CIRC - Math.min(pct/100,1)*CIRC;
-    return `<svg viewBox="0 0 100 100" width="100" height="100">
-      <circle cx="50" cy="50" r="39" fill="none" stroke="#e2e8f0" stroke-width="8"/>
-      <circle cx="50" cy="50" r="39" fill="none" stroke="${c}" stroke-width="8"
-        stroke-dasharray="${CIRC}" stroke-dashoffset="${offset}"
-        stroke-linecap="round" transform="rotate(-90 50 50)"/>
-      <text x="50" y="46" text-anchor="middle" font-size="13" font-weight="700" fill="${c}">${pct.toFixed(1)}%</text>
-    </svg>`;
+    return `<svg class="circle-svg-sm" width="96" height="96" viewBox="0 0 96 96">
+      <circle class="c-track" cx="48" cy="48" r="39"/>
+      <circle class="c-fill" cx="48" cy="48" r="39" stroke="${c}"
+        stroke-dasharray="${CIRC.toFixed(2)}" stroke-dashoffset="${offset.toFixed(2)}"/>
+    </svg>
+    <div class="circle-inner">
+      <div class="c-pct" style="color:${c}">${pct.toFixed(1)}%</div>
+    </div>`;
   }
 
-  // Build tele rows
-  let teleRows = '';
-  const stats = allTeles.map(t => computeTeleStats(data, t, spvTargets));
+  // ── Stats (ALL data, not just golive) ──
+  const total  = allData.length;
+  const golive = goliveData.length;
+  const cancel = allData.filter(r=>r.status==='CANCEL').length;
+  const reject = allData.filter(r=>r.status==='REJECT').length;
+  const proses = allData.filter(r=>r.status==='PROSES').length;
+  const survey = allData.filter(r=>r.status==='SURVEY').length;
+  const glMotorAll = goliveData.filter(r=>r.produk==='MOTOR').length;
+  const glMobilAll = goliveData.filter(r=>r.produk==='MOBIL').length;
+  const ccMotor = allData.filter(r=>r.status==='CANCEL'&&r.produk==='MOTOR').length;
+  const ccMobil = allData.filter(r=>r.status==='CANCEL'&&r.produk==='MOBIL').length;
+  const rjMotor = allData.filter(r=>r.status==='REJECT'&&r.produk==='MOTOR').length;
+  const rjMobil = allData.filter(r=>r.status==='REJECT'&&r.produk==='MOBIL').length;
+
+  // ── Tele table ──
+  const stats = allTeles.map(t => computeTeleStats(goliveData, t, spvTargets));
   stats.sort((a,b) => {
-    if (a.total===0 && b.total>0) return 1;
-    if (b.total===0 && a.total>0) return -1;
-    return b.golive - a.golive;
+    if (a.total===0&&b.total>0) return 1;
+    if (b.total===0&&a.total>0) return -1;
+    return b.golive-a.golive;
   });
 
-  // Totals row
   const tot = {total:0,golive:0,motorIntGL:0,motorExtGL:0,mobilAmt:0,tgtMotorInt:0,tgtMotorExt:0,tgtMobilAmt:0,srcInt:0,srcExt:0};
   for (const s of stats) for (const k of Object.keys(tot)) if (typeof s[k]==='number') tot[k]+=s[k];
-
-  for (const s of stats) {
-    const color = TELE_COLORS[s.tele]||'#64748b';
-    const noLead = s.total === 0;
-    teleRows += `
-      <tr style="${noLead?'opacity:0.5;background:#fafafa':''}">
-        <td class="name">
-          <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${color};margin-right:6px;vertical-align:middle"></span>
-          ${s.tele}
-          ${noLead?'<span style="font-size:9px;font-weight:600;color:#94a3b8;margin-left:6px;background:#f1f5f9;padding:1px 6px;border-radius:4px">NO LEAD</span>':''}
-        </td>
-        <td class="center" style="min-width:130px">${achCell(s.motorIntGL, s.tgtMotorInt, s.pctMotorInt, 'unit', '#3b82f6')}</td>
-        <td class="center" style="min-width:130px">${achCell(s.motorExtGL, s.tgtMotorExt, s.pctMotorExt, 'unit', '#8b5cf6')}</td>
-        <td class="center" style="min-width:110px">
-          <span style="font-weight:700;color:#15803d;font-size:12px">${fmtRp(s.mobilAmt)}</span>
-          ${s.tgtMobilAmt>0?`<br><span style="font-size:10px;color:#94a3b8">/ ${fmtRp(s.tgtMobilAmt)}</span>`:''}
-        </td>
-        <td class="center">
-          ${s.gapMobil!==null?`<span class="gap-val ${s.gapMobil>=0?'pos':'neg'}">${s.gapMobil>=0?'+':''}${fmtRp(s.gapMobil)}</span>`:'<span class="gap-val zero">—</span>'}
-        </td>
-        <td class="num">${s.total}</td>
-        <td class="center"><span class="chip green">${s.golive}</span></td>
-        <td class="num">${s.srcInt}</td>
-        <td class="num">${s.srcExt}</td>
-      </tr>`;
-  }
-
-  // Total row
   const totPctMI = tot.tgtMotorInt>0?(tot.motorIntGL/tot.tgtMotorInt)*100:null;
   const totPctME = tot.tgtMotorExt>0?(tot.motorExtGL/tot.tgtMotorExt)*100:null;
-  teleRows += `
-    <tr class="total-row">
-      <td class="name"><strong>TOTAL (${allTeles.length} Tele)</strong></td>
-      <td class="center">${achCell(tot.motorIntGL, tot.tgtMotorInt, totPctMI, 'unit', '#3b82f6')}</td>
-      <td class="center">${achCell(tot.motorExtGL, tot.tgtMotorExt, totPctME, 'unit', '#8b5cf6')}</td>
-      <td class="center"><span style="font-weight:700;color:#15803d">${fmtRp(tot.mobilAmt)}</span>${tot.tgtMobilAmt>0?`<br><span style="font-size:10px;color:#94a3b8">/ ${fmtRp(tot.tgtMobilAmt)}</span>`:''}</td>
-      <td class="center">${tot.tgtMobilAmt>0?`<span class="gap-val ${tot.mobilAmt-tot.tgtMobilAmt>=0?'pos':'neg'}">${fmtRp(tot.mobilAmt-tot.tgtMobilAmt)}</span>`:'—'}</td>
-      <td class="num"><strong>${tot.total}</strong></td>
-      <td class="center"><strong><span class="chip green">${tot.golive}</span></strong></td>
-      <td class="num"><strong>${tot.srcInt}</strong></td>
-      <td class="num"><strong>${tot.srcExt}</strong></td>
+
+  let teleRows = '';
+  for (const s of stats) {
+    const color = TELE_COLORS[s.tele]||'#64748b';
+    const noLead = s.total===0;
+    teleRows += `<tr style="${noLead?'opacity:0.6;background:#fafafa':''}">
+      <td class="name">
+        <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${color};margin-right:6px;vertical-align:middle"></span>
+        ${s.tele}
+        ${noLead?'<span style="font-size:9px;font-weight:600;color:#94a3b8;margin-left:6px;background:#f1f5f9;padding:1px 6px;border-radius:4px">NO LEAD</span>':''}
+      </td>
+      <td class="center col-sep-left" style="min-width:130px">${achCell(s.motorIntGL,s.tgtMotorInt,s.pctMotorInt,'unit','#3b82f6')}</td>
+      <td class="center" style="min-width:130px">${achCell(s.motorExtGL,s.tgtMotorExt,s.pctMotorExt,'unit','#8b5cf6')}</td>
+      <td class="center" style="min-width:110px">
+        <span style="font-weight:700;color:#15803d;font-size:12px">${fmtRp(s.mobilAmt)}</span>
+        ${s.tgtMobilAmt>0?`<br><span style="font-size:10px;color:#94a3b8">/ ${fmtRp(s.tgtMobilAmt)}</span>`:''}
+      </td>
+      <td class="center" style="border-right:2px solid #e2e8f0;min-width:90px">
+        ${s.gapMobil!==null?`<span class="gap-val ${s.gapMobil>=0?'pos':'neg'}">${s.gapMobil>=0?'+':''}${fmtRp(s.gapMobil)}</span>`:'<span class="gap-val zero">—</span>'}
+      </td>
+      <td class="num">${s.total}</td>
+      <td class="center"><span class="chip green">${s.golive}</span></td>
+      <td class="num col-sep-left">${s.srcInt}</td>
+      <td class="num">${s.srcExt}</td>
     </tr>`;
+  }
+
+  teleRows += `<tr class="total-row">
+    <td class="name">TOTAL (${allTeles.length} Tele)</td>
+    <td class="center col-sep-left">${achCell(tot.motorIntGL,tot.tgtMotorInt,totPctMI,'unit','#3b82f6')}</td>
+    <td class="center">${achCell(tot.motorExtGL,tot.tgtMotorExt,totPctME,'unit','#8b5cf6')}</td>
+    <td class="center"><span style="font-weight:700;color:#15803d">${fmtRp(tot.mobilAmt)}</span>${tot.tgtMobilAmt>0?`<br><span style="font-size:10px;color:#94a3b8">/ ${fmtRp(tot.tgtMobilAmt)}</span>`:''}</td>
+    <td class="center" style="border-right:2px solid #e2e8f0">${tot.tgtMobilAmt>0?`<span class="gap-val ${tot.mobilAmt-tot.tgtMobilAmt>=0?'pos':'neg'}">${fmtRp(tot.mobilAmt-tot.tgtMobilAmt)}</span>`:'—'}</td>
+    <td class="num"><b>${tot.total}</b></td>
+    <td class="center"><span class="chip green">${tot.golive}</span></td>
+    <td class="num col-sep-left"><b>${tot.srcInt}</b></td>
+    <td class="num"><b>${tot.srcExt}</b></td>
+  </tr>`;
+
+  const badgeClass = spv==='LISA'?'spv-lisa':spv==='DESI'?'spv-desi':'spv-sari';
 
   return `
-    <div class="spv-block">
-      <div class="spv-block-header">
-        <span class="spv-dot spv-${spv.toLowerCase()}"></span>
-        SPV ${spv}
-      </div>
+  <div class="section-label">
+    <span class="spv-dot ${badgeClass}"></span>
+    <b>SPV ${spv}</b>
+    <span id="last-update-label-${spv}"></span>
+  </div>
 
-      <!-- Overview circles -->
-      <div class="cc-row" style="margin:16px 0">
-        <div class="cc">
-          ${circSVG(pctMI,'#2563eb')}
-          <div class="cc-label">🏍 MOTOR INTERNAL</div>
-          <div class="cc-row-val">${achMotorInt} unit</div>
-          <div class="cc-row-sub">Target <span>${tgtMotorInt} unit</span></div>
-          <div class="cc-row-val ${gapMI>=0?'pos':'neg'}">Gap ${gapMI>=0?'+':''}${gapMI} unit</div>
-        </div>
-        <div class="cc">
-          ${circSVG(pctME,'#7c3aed')}
-          <div class="cc-label">🏍 MOTOR EXTERNAL</div>
-          <div class="cc-row-val">${achMotorExt} unit</div>
-          <div class="cc-row-sub">Target <span>${tgtMotorExt} unit</span></div>
-          <div class="cc-row-val ${gapME>=0?'pos':'neg'}">Gap ${gapME>=0?'+':''}${gapME} unit</div>
-        </div>
-        <div class="cc">
-          ${circSVG(pctMB,'#16a34a')}
-          <div class="cc-label">🚗 MOBIL (NTF)</div>
-          <div class="cc-row-val">${fmtRp(achMobilAmt)}</div>
-          <div class="cc-row-sub">Target <span>${fmtRp(tgtMobilAmt)}</span></div>
-          <div class="cc-row-val ${gapMB>=0?'pos':'neg'}">Gap ${gapMB>=0?'+':''}${fmtRp(gapMB)}</div>
+  <!-- Circle Cards -->
+  <div class="overview-top">
+    <div class="circle-card">
+      <div class="circle-card-left">
+        ${circHTML(pctMI,'#2563eb')}
+      </div>
+      <div class="circle-card-right">
+        <div class="cc-label">🏍 Motor Internal</div>
+        <div class="cc-value" style="color:#2563eb">${achMotorInt} unit</div>
+        <div class="cc-rows">
+          <div class="cc-row"><span class="cc-row-lbl">Target</span><span class="cc-row-val dim">${tgtMotorInt>0?tgtMotorInt+' unit':'— unit'}</span></div>
+          <div class="cc-row"><span class="cc-row-lbl">Gap</span><span class="cc-row-val ${gapMI>=0?'pos':'neg'}">${tgtMotorInt>0?(gapMI>=0?'+':'')+gapMI+' unit':'—'}</span></div>
         </div>
       </div>
+    </div>
+    <div class="circle-card">
+      <div class="circle-card-left">
+        ${circHTML(pctME,'#7c3aed')}
+      </div>
+      <div class="circle-card-right">
+        <div class="cc-label">🏍 Motor External</div>
+        <div class="cc-value" style="color:#7c3aed">${achMotorExt} unit</div>
+        <div class="cc-rows">
+          <div class="cc-row"><span class="cc-row-lbl">Target</span><span class="cc-row-val dim">${tgtMotorExt>0?tgtMotorExt+' unit':'— unit'}</span></div>
+          <div class="cc-row"><span class="cc-row-lbl">Gap</span><span class="cc-row-val ${gapME>=0?'pos':'neg'}">${tgtMotorExt>0?(gapME>=0?'+':'')+gapME+' unit':'—'}</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="circle-card">
+      <div class="circle-card-left">
+        ${circHTML(pctMB,'#16a34a')}
+      </div>
+      <div class="circle-card-right">
+        <div class="cc-label">🚗 Mobil (NTF)</div>
+        <div class="cc-value" style="color:#16a34a">${fmtRp(achMobilAmt)}</div>
+        <div class="cc-rows">
+          <div class="cc-row"><span class="cc-row-lbl">Target</span><span class="cc-row-val dim">${tgtMobilAmt>0?fmtRp(tgtMobilAmt):'—'}</span></div>
+          <div class="cc-row"><span class="cc-row-lbl">Gap</span><span class="cc-row-val ${gapMB>=0?'pos':'neg'}">${tgtMobilAmt>0?(gapMB>=0?'+':'')+fmtRp(gapMB):'—'}</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
 
-      <!-- Stats row -->
-      <div class="stats-row" style="margin:16px 0">
-        <div class="stat-card">
-          <div class="sc-label">TOTAL GOLIVE</div>
-          <div class="sc-val" style="color:#16a34a">${total}</div>
-          <div class="sc-sub">🏍 ${glMotor} motor · 🚗 ${glMobil} mobil</div>
-        </div>
-      </div>
+  <!-- Stats Row -->
+  <div class="overview-bottom">
+    <div class="stat-card">
+      <div class="stat-label">Total Order In</div>
+      <div class="stat-value blue">${total}</div>
+      <div class="stat-sub">semua status</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Golive / Cair</div>
+      <div class="stat-value green">${golive}</div>
+      <div class="stat-sub">🏍 ${glMotorAll} motor · 🚗 ${glMobilAll} mobil</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Cancel</div>
+      <div class="stat-value orange">${cancel}</div>
+      <div class="stat-sub">🏍 ${ccMotor} · 🚗 ${ccMobil}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Reject</div>
+      <div class="stat-value red">${reject}</div>
+      <div class="stat-sub">🏍 ${rjMotor} · 🚗 ${rjMobil}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Proses + Survey</div>
+      <div class="stat-value purple">${proses+survey}</div>
+      <div class="stat-sub">Proses ${proses} · Survey ${survey}</div>
+    </div>
+  </div>
 
-      <!-- Detail Table -->
-      <div class="tbl-wrap" style="margin-top:8px">
-        <table>
-          <thead>
-            <tr>
-              <th class="name">TELE NAME</th>
-              <th class="center col-sep-left" colspan="2">ACHIEVEMENT VS TARGET</th>
-              <th class="center" colspan="2">NTF MOBIL</th>
-              <th class="num">TOTAL LEAD</th>
-              <th class="center">GOLIVE</th>
-              <th class="num">SRC INT</th>
-              <th class="num">SRC EXT</th>
-            </tr>
-            <tr style="font-size:10px;color:#94a3b8">
-              <th></th>
-              <th class="center" style="min-width:130px">MOTOR INT<br>UNIT / TARGET / %</th>
-              <th class="center" style="min-width:130px">MOTOR EXT<br>UNIT / TARGET / %</th>
-              <th class="center" style="min-width:110px">AMOUNT (RP)</th>
-              <th class="center">GAP TARGET</th>
-              <th></th><th></th><th></th><th></th>
-            </tr>
-          </thead>
-          <tbody>${teleRows}</tbody>
-        </table>
+  <!-- Tele Table -->
+  <div class="table-card">
+    <div class="table-header">
+      <div>
+        <div class="table-header-title">Performance By Tele</div>
       </div>
-    </div>`;
+    </div>
+    <div class="tbl-wrap">
+      <table class="perf-table">
+        <thead>
+          <tr>
+            <th rowspan="2" class="name">TELE NAME</th>
+            <th colspan="2" class="center col-sep-left" style="background:#eff6ff;color:#1d4ed8">ACHIEVEMENT VS TARGET</th>
+            <th colspan="2" class="center" style="background:#f0fdf4;color:#15803d">NTF MOBIL</th>
+            <th rowspan="2" class="num">TOTAL LEAD</th>
+            <th rowspan="2" class="center">GOLIVE</th>
+            <th rowspan="2" class="num col-sep-left">SRC INT</th>
+            <th rowspan="2" class="num">SRC EXT</th>
+          </tr>
+          <tr>
+            <th class="center col-sep-left" style="min-width:130px;font-size:9px">MOTOR INT<br>UNIT / TARGET / %</th>
+            <th class="center" style="min-width:130px;font-size:9px">MOTOR EXT<br>UNIT / TARGET / %</th>
+            <th class="center" style="min-width:110px;font-size:9px">AMOUNT (RP)</th>
+            <th class="center" style="font-size:9px">GAP TARGET</th>
+          </tr>
+        </thead>
+        <tbody>${teleRows}</tbody>
+      </table>
+    </div>
+  </div>`;
 }
 
 function computeTeleStats(data, tele, targets) {
@@ -1022,32 +1073,24 @@ function computeTeleStats(data, tele, targets) {
   const glRows = rows.filter(r=>r.status==='GOLIVE');
   const motorIntGL = glRows.filter(r=>r.produk==='MOTOR'&&r.source==='INTERNAL').length;
   const motorExtGL = glRows.filter(r=>r.produk==='MOTOR'&&r.source==='EXTERNAL').length;
-  const mobilGL = glRows.filter(r=>r.produk==='MOBIL').length;
   const mobilAmt = glRows.filter(r=>r.produk==='MOBIL').reduce((s,r)=>s+r.pencairan,0);
   const tgtMotorInt = t.motorInt||0;
   const tgtMotorExt = t.motorExt||0;
   const tgtMobilAmt = t.mobilAmt||0;
-  const pctMotorInt = tgtMotorInt>0?(motorIntGL/tgtMotorInt)*100:null;
-  const pctMotorExt = tgtMotorExt>0?(motorExtGL/tgtMotorExt)*100:null;
-  const pctMobil = tgtMobilAmt>0?(mobilAmt/tgtMobilAmt)*100:null;
   return {
     tele, spv:(t.spv||'-'),
-    total:rows.length,
-    golive:glRows.length,
-    cancel:rows.filter(r=>r.status==='CANCEL').length,
-    reject:rows.filter(r=>r.status==='REJECT').length,
-    proses:rows.filter(r=>r.status==='PROSES').length,
-    survey:rows.filter(r=>r.status==='SURVEY').length,
-    approved:rows.filter(r=>r.status==='APPROVED').length,
-    pending:rows.filter(r=>r.status==='PENDING').length,
+    total:rows.length, golive:glRows.length,
     srcInt:rows.filter(r=>r.source==='INTERNAL').length,
     srcExt:rows.filter(r=>r.source==='EXTERNAL').length,
-    motorIntGL, motorExtGL, mobilGL, mobilAmt,
+    motorIntGL, motorExtGL, mobilAmt,
     tgtMotorInt, tgtMotorExt, tgtMobilAmt,
-    pctMotorInt, pctMotorExt, pctMobil,
+    pctMotorInt: tgtMotorInt>0?(motorIntGL/tgtMotorInt)*100:null,
+    pctMotorExt: tgtMotorExt>0?(motorExtGL/tgtMotorExt)*100:null,
+    pctMobil: tgtMobilAmt>0?(mobilAmt/tgtMobilAmt)*100:null,
     gapMobil: tgtMobilAmt>0?(mobilAmt-tgtMobilAmt):null,
   };
 }
+
 
 function renderOverview(data) {
   const total  = data.length;
@@ -1294,13 +1337,12 @@ function updateTimestamp() {
   const s=[t.getHours(),t.getMinutes(),t.getSeconds()].map(n=>String(n).padStart(2,'0')).join(':');
   const d=t.toLocaleDateString('id-ID',{day:'2-digit',month:'numeric',year:'numeric'});
   const label=`(Last Update: ${d.replace(/\//g,'/')}, ${s})`;
-  // Safe set — cek element exists dulu
-  const safeSet = (id, val) => { const e = document.getElementById(id); if(e) e.textContent = val; };
+  const safeSet = (id, val) => { const e=document.getElementById(id); if(e) e.textContent=val; };
   safeSet('last-update-label', label);
   safeSet('perf-update-label', label);
   safeSet('footer-bar', `${isLive?'🟢 Live':'🟡 Cached'} — Auto-refresh setiap 1 jam — Last update: ${d} ${s}`);
   const modeStr = USE_APPS_SCRIPT ? '🔒 Apps Script' : '🌐 Direct Sheet';
-  safeSet('topbar-sub', `Golive Only View · ${isLive?`${modeStr} — Connected`:'Disconnected'}`);
+  el('topbar-sub').textContent=`SPV Lisa · ${isLive?`${modeStr} — Connected`:'Disconnected'}`;
 }
 
 // ─────────────────────────────────────────────
