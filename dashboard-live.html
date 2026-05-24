@@ -365,36 +365,42 @@ table.perf-table tbody tr.total-row td.name { font-size: 12px; }
     </div>
 
     <!-- Stats -->
-    <div class="card stats-grid">
-      <div class="stat-item">
-        <div class="stat-label">Total Order In</div>
-        <div class="stat-value blue" id="stat-total">0</div>
-        <div class="stat-sub">semua status</div>
+    <div class="card" style="padding:20px 0;">
+      <!-- Row 1: Total + Golive breakdown per produk -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);border-bottom:1px solid var(--border);">
+        <div class="stat-item">
+          <div class="stat-label">Total Order In</div>
+          <div class="stat-value blue" id="stat-total">0</div>
+          <div class="stat-sub">semua status</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Golive / Cair</div>
+          <div class="stat-value green" id="stat-golive">0</div>
+          <div class="stat-sub" id="stat-golive-sub">🏍 0 motor · 🚗 0 mobil</div>
+        </div>
+        <div class="stat-item" style="border-right:none">
+          <div class="stat-label">Conv. Rate</div>
+          <div class="stat-value gray" id="stat-conv">0%</div>
+          <div class="stat-sub">golive / total order</div>
+        </div>
       </div>
-      <div class="stat-item">
-        <div class="stat-label">Golive / Cair</div>
-        <div class="stat-value green" id="stat-golive">0</div>
-        <div class="stat-sub" id="stat-golive-sub">conv. 0%</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-label">Cancel</div>
-        <div class="stat-value orange" id="stat-cancel">0</div>
-        <div class="stat-sub" id="stat-cancel-sub">0% dari total</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-label">Reject</div>
-        <div class="stat-value red" id="stat-reject">0</div>
-        <div class="stat-sub" id="stat-reject-sub">0% dari total</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-label">Proses + Survey</div>
-        <div class="stat-value purple" id="stat-proses">0</div>
-        <div class="stat-sub" id="stat-proses-sub">0% dari total</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-label">Conv. Rate</div>
-        <div class="stat-value gray" id="stat-conv">0%</div>
-        <div class="stat-sub">golive / total order</div>
+      <!-- Row 2: Cancel Reject Proses Survey -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);padding-top:4px">
+        <div class="stat-item">
+          <div class="stat-label">Cancel</div>
+          <div class="stat-value orange" id="stat-cancel">0</div>
+          <div class="stat-sub" id="stat-cancel-sub">🏍 0 · 🚗 0</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Reject</div>
+          <div class="stat-value red" id="stat-reject">0</div>
+          <div class="stat-sub" id="stat-reject-sub">🏍 0 · 🚗 0</div>
+        </div>
+        <div class="stat-item" style="border-right:none">
+          <div class="stat-label">Proses + Survey</div>
+          <div class="stat-value purple" id="stat-proses">0</div>
+          <div class="stat-sub" id="stat-proses-sub">Proses 0 · Survey 0</div>
+        </div>
       </div>
     </div>
   </div>
@@ -423,6 +429,7 @@ table.perf-table tbody tr.total-row td.name { font-size: 12px; }
             <th rowspan="2" class="center">Proses</th>
             <th rowspan="2" class="center">Survey</th>
             <th rowspan="2" class="center">Approved</th>
+            <th rowspan="2" class="center">Pending</th>
             <th rowspan="2" class="num" style="border-left:2px solid #e2e8f0">Src Internal</th>
             <th rowspan="2" class="num">Src External</th>
           </tr>
@@ -461,7 +468,7 @@ const COL_ORDER = {
   tanggal:   ['TANGGAL'],
   produk:    ['PRODUCK','PRODUK','PRODUCT'],
   nama:      ['NAMA KONSUMEN','NAMA','KONSUMEN'],
-  status:    ['STATUS'],
+  status:    ['UPDATE'],   // ← STATUS diambil dari kolom UPDATE
   pencairan: ['PENCAIRAN'],
   tele:      ['NAMA TELE','TELE'],
   spv:       ['SPV'],
@@ -488,6 +495,7 @@ const STATUS_MAP = [
   [/MISS.LEVEL|MISS LEVEL/i,         'MISS LEVEL'],
   [/PROSES|PROCESS|ON.PROCESS/i,     'PROSES'],
   [/SURVEY|SURVEI/i,                 'SURVEY'],
+  [/PENDING|BELUM|^-$|^\s*$/i,       'PENDING'],
 ];
 
 // TELE COLORS
@@ -577,15 +585,21 @@ function parseOrderCSV(text) {
   const ci = {};
   for (const [k,cands] of Object.entries(COL_ORDER)) ci[k]=findCol(headers,cands);
 
+  // Debug: log headers yang ditemukan
+  console.log('Headers sheet ORDER IN:', headers.slice(0,25));
+  console.log('Column mapping:', Object.fromEntries(Object.entries(ci).map(([k,v])=>[k, v>=0?headers[v]:'NOT FOUND'])));
+
   const result = [];
   for (let i=1; i<lines.length; i++) {
     if (!lines[i].trim()) continue;
     const row = parseCSVRow(lines[i]);
     const get = k => ci[k]>=0 ? (row[ci[k]]||'').trim() : '';
-    const tele = get('tele').toUpperCase().trim();
+    const tele    = get('tele').toUpperCase().trim();
     const tanggal = parseTanggal(get('tanggal'));
-    const status  = normStatus(get('status'));
-    if (!tele||!tanggal||!status||status==='UNKNOWN') continue;
+    // Baris valid kalau ada tele dan tanggal (status boleh kosong = belum diupdate)
+    if (!tele||!tanggal) continue;
+    const rawStatus = get('status');
+    const status    = rawStatus ? normStatus(rawStatus) : 'PENDING';
     result.push({
       tanggal, bulan: tanggal.split(' ').slice(1).join(' '),
       produk:   normProduk(get('produk')),
@@ -599,6 +613,7 @@ function parseOrderCSV(text) {
       leasing:  get('leasing')||'-',
     });
   }
+  console.log(`Parsed ${result.length} rows. Sample statuses:`, [...new Set(result.map(r=>r.status))].slice(0,15));
   return result;
 }
 
@@ -728,7 +743,7 @@ function computeTeleStats(rows, tele) {
   const tgt         = TARGETS[tele]||{motorInt:0,motorExt:0,mobilAmt:0};
 
   const count = st => r.filter(x=>x.status===st).length;
-  const spv   = r[0]?.spv||'-';
+  const spv   = r.find(x=>x.spv&&x.spv!=='-')?.spv || r[0]?.spv || '-';
 
   return {
     tele, spv,
@@ -739,16 +754,17 @@ function computeTeleStats(rows, tele) {
     proses:    count('PROSES'),
     survey:    count('SURVEY'),
     approved:  count('APPROVED'),
+    pending:   count('PENDING'),
     srcInt:    r.filter(x=>x.source==='INTERNAL').length,
     srcExt:    r.filter(x=>x.source==='EXTERNAL').length,
     motorIntGL, motorExtGL, mobilGL, mobilAmt,
     tgtMotorInt: tgt.motorInt,
     tgtMotorExt: tgt.motorExt,
     tgtMobilAmt: tgt.mobilAmt,
-    pctMotorInt: tgt.motorInt>0? (motorIntGL/tgt.motorInt)*100 : null,
-    pctMotorExt: tgt.motorExt>0? (motorExtGL/tgt.motorExt)*100 : null,
-    pctMobil:    tgt.mobilAmt>0? (mobilAmt/tgt.mobilAmt)*100 : null,
-    gapMobil:    tgt.mobilAmt>0? mobilAmt-tgt.mobilAmt : null,
+    pctMotorInt: tgt.motorInt>0 ? (motorIntGL/tgt.motorInt)*100 : null,
+    pctMotorExt: tgt.motorExt>0 ? (motorExtGL/tgt.motorExt)*100 : null,
+    pctMobil:    tgt.mobilAmt>0 ? (mobilAmt/tgt.mobilAmt)*100 : null,
+    gapMobil:    tgt.mobilAmt>0 ? mobilAmt-tgt.mobilAmt : null,
   };
 }
 
@@ -764,46 +780,65 @@ function renderAll() {
 
 function renderOverview(data) {
   const total    = data.length;
-  const golive   = data.filter(r=>r.status==='GOLIVE').length;
-  const cancel   = data.filter(r=>r.status==='CANCEL').length;
-  const reject   = data.filter(r=>r.status==='REJECT').length;
-  const proses   = data.filter(r=>r.status==='PROSES').length;
-  const survey   = data.filter(r=>r.status==='SURVEY').length;
-  const conv     = total>0? (golive/total*100).toFixed(1) : '0';
+  const st       = s => data.filter(r=>r.status===s);
+  const glAll    = st('GOLIVE');
+  const golive   = glAll.length;
+  const cancel   = st('CANCEL').length;
+  const reject   = st('REJECT').length;
+  const proses   = st('PROSES').length;
+  const survey   = st('SURVEY').length;
+  const conv     = total>0 ? (golive/total*100).toFixed(1) : '0';
 
-  // NTF = total pencairan GOLIVE MOBIL semua tele
-  const ntfAmt   = data.filter(r=>r.status==='GOLIVE'&&r.produk==='MOBIL').reduce((s,r)=>s+r.pencairan,0);
+  // Per produk breakdown
+  const glMotor  = glAll.filter(r=>r.produk==='MOTOR').length;
+  const glMobil  = glAll.filter(r=>r.produk==='MOBIL').length;
+  const ccMotor  = data.filter(r=>r.status==='CANCEL'&&r.produk==='MOTOR').length;
+  const ccMobil  = data.filter(r=>r.status==='CANCEL'&&r.produk==='MOBIL').length;
+  const rjMotor  = data.filter(r=>r.status==='REJECT'&&r.produk==='MOTOR').length;
+  const rjMobil  = data.filter(r=>r.status==='REJECT'&&r.produk==='MOBIL').length;
 
-  // Total target NTF dari semua tele yang ada datanya
-  const activeTeles = [...new Set(data.map(r=>r.tele))];
-  const totalTargetNTF = activeTeles.reduce((s,t)=>s+(TARGETS[t]?.mobilAmt||0),0);
-  const pctNTF = totalTargetNTF>0? Math.min((ntfAmt/totalTargetNTF)*100,999) : 0;
+  // NTF Mobil = SUM pencairan GOLIVE MOBIL
+  const ntfAmt   = glAll.filter(r=>r.produk==='MOBIL').reduce((s,r)=>s+r.pencairan,0);
+
+  // Total target dari SEMUA tele di sheet TARGET PERTELE (bukan hanya yang ada di data bulan ini)
+  const allTargetTeles = Object.keys(TARGETS);
+  const totalTargetMotorInt = allTargetTeles.reduce((s,t)=>s+(TARGETS[t]?.motorInt||0),0);
+  const totalTargetMotorExt = allTargetTeles.reduce((s,t)=>s+(TARGETS[t]?.motorExt||0),0);
+  const totalTargetNTF      = allTargetTeles.reduce((s,t)=>s+(TARGETS[t]?.mobilAmt||0),0);
+  // Total target motor = INT + EXT
+  const totalTargetMotor    = totalTargetMotorInt + totalTargetMotorExt;
+
+  // Achievement motor = COUNT golive MOTOR (semua source)
+  const achMotorInt = glAll.filter(r=>r.produk==='MOTOR'&&r.source==='INTERNAL').length;
+  const achMotorExt = glAll.filter(r=>r.produk==='MOTOR'&&r.source==='EXTERNAL').length;
+
+  const pctNTF = totalTargetNTF>0 ? Math.min((ntfAmt/totalTargetNTF)*100, 999) : 0;
   const gapNTF = ntfAmt - totalTargetNTF;
 
-  // Circle
-  const circ = 2*Math.PI*46; // r=46
+  // Circle NTF
+  const circ   = 2*Math.PI*46;
   const offset = circ - Math.min(pctNTF/100,1)*circ;
   const fillEl = document.getElementById('circle-fill');
   fillEl.style.strokeDashoffset = offset;
-  fillEl.setAttribute('stroke', pctNTF>=100?'#16a34a':'#2563eb');
-
+  fillEl.setAttribute('stroke', pctNTF>=100?'#16a34a':pctNTF>=70?'#ea580c':'#2563eb');
   document.getElementById('circle-pct').textContent = pctNTF.toFixed(1)+'%';
   document.getElementById('circle-pct').style.color = pctNTF>=100?'#16a34a':pctNTF>=70?'#ea580c':'#2563eb';
   document.getElementById('ntf-amount').textContent  = fmtRp(ntfAmt);
-  document.getElementById('ntf-target').textContent  = totalTargetNTF>0? fmtRp(totalTargetNTF):'—';
-  document.getElementById('ntf-gap').textContent     = totalTargetNTF>0? (gapNTF>=0?'+':'')+fmtRp(gapNTF):'—';
+  document.getElementById('ntf-target').textContent  = totalTargetNTF>0 ? fmtRp(totalTargetNTF) : '—';
+  document.getElementById('ntf-gap').textContent     = totalTargetNTF>0 ? (gapNTF>=0?'+':'')+fmtRp(gapNTF) : '—';
   document.getElementById('ntf-gap').style.color     = gapNTF>=0?'#16a34a':'#dc2626';
 
-  el('stat-total').textContent   = total;
-  el('stat-golive').textContent  = golive;
-  el('stat-golive-sub').textContent = `conv. ${conv}%`;
-  el('stat-cancel').textContent  = cancel;
-  el('stat-cancel-sub').textContent = `${pct(cancel,total)}% dari total`;
-  el('stat-reject').textContent  = reject;
-  el('stat-reject-sub').textContent = `${pct(reject,total)}% dari total`;
-  el('stat-proses').textContent  = proses+survey;
+  // Stats cards
+  el('stat-total').textContent     = total;
+  el('stat-golive').textContent    = golive;
+  el('stat-golive-sub').innerHTML  = `🏍 ${glMotor} motor &nbsp;·&nbsp; 🚗 ${glMobil} mobil`;
+  el('stat-conv').textContent      = conv+'%';
+  el('stat-cancel').textContent    = cancel;
+  el('stat-cancel-sub').innerHTML  = `🏍 ${ccMotor} &nbsp;·&nbsp; 🚗 ${ccMobil}`;
+  el('stat-reject').textContent    = reject;
+  el('stat-reject-sub').innerHTML  = `🏍 ${rjMotor} &nbsp;·&nbsp; 🚗 ${rjMobil}`;
+  el('stat-proses').textContent    = proses+survey;
   el('stat-proses-sub').textContent = `Proses ${proses} · Survey ${survey}`;
-  el('stat-conv').textContent    = conv+'%';
 }
 
 function renderTable(data) {
@@ -819,7 +854,7 @@ function renderTable(data) {
 
   // Totals
   const tot = {
-    total:0,golive:0,cancel:0,reject:0,proses:0,survey:0,approved:0,
+    total:0,golive:0,cancel:0,reject:0,proses:0,survey:0,approved:0,pending:0,
     srcInt:0,srcExt:0,motorIntGL:0,motorExtGL:0,mobilGL:0,mobilAmt:0,
     tgtMotorInt:0,tgtMotorExt:0,tgtMobilAmt:0,
   };
@@ -874,6 +909,7 @@ function renderTable(data) {
       <td class="center"><span class="chip blue">${s.proses}</span></td>
       <td class="center"><span class="chip yellow">${s.survey}</span></td>
       <td class="center"><span class="chip purple">${s.approved}</span></td>
+      <td class="center"><span class="chip gray">${s.pending}</span></td>
       <td class="num col-sep-left">${s.srcInt}</td>
       <td class="num">${s.srcExt}</td>
     `;
@@ -900,6 +936,7 @@ function renderTable(data) {
     <td class="center"><span class="chip blue">${tot.proses}</span></td>
     <td class="center"><span class="chip yellow">${tot.survey}</span></td>
     <td class="center"><span class="chip purple">${tot.approved}</span></td>
+    <td class="center"><span class="chip gray">${tot.pending}</span></td>
     <td class="num col-sep-left"><b>${tot.srcInt}</b></td>
     <td class="num"><b>${tot.srcExt}</b></td>
   `;
