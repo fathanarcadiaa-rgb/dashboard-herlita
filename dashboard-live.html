@@ -94,13 +94,7 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
 }
 .section-label span { font-size: 11px; font-weight: 400; color: var(--text3); }
 
-/* ── OVERVIEW GRID ── */
-.overview-grid {
-  display: grid;
-  grid-template-columns: 320px 1fr;
-  gap: 14px;
-  margin-bottom: 20px;
-}
+/* ── OVERVIEW GRID (deprecated - diganti overview-top/bottom) ── */
 .card {
   background: var(--white);
   border: 1px solid var(--border);
@@ -108,55 +102,66 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
   box-shadow: var(--shadow);
 }
 
-/* NTF CIRCLE CARD */
-.ntf-card {
-  padding: 20px 24px;
-  display: flex; flex-direction: column; gap: 16px;
-}
-.ntf-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text2); }
-.ntf-body { display: flex; align-items: center; gap: 20px; }
-.circle-wrap { position: relative; flex-shrink: 0; }
-.circle-svg { transform: rotate(-90deg); }
-.circle-track { fill: none; stroke: #e2e8f0; stroke-width: 10; }
-.circle-fill { fill: none; stroke-width: 10; stroke-linecap: round; transition: stroke-dashoffset 1s cubic-bezier(.4,0,.2,1); }
-.circle-label {
-  position: absolute; top:50%; left:50%;
-  transform: translate(-50%,-50%);
-  text-align: center;
-}
-.circle-pct { font-size: 18px; font-weight: 800; line-height: 1; }
-.circle-sub { font-size: 9px; color: var(--text3); margin-top: 2px; }
-.ntf-info { flex: 1; }
-.ntf-amount { font-size: 22px; font-weight: 800; color: var(--text); line-height: 1; margin-bottom: 6px; }
-.ntf-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text3); margin-bottom: 10px; }
-.ntf-meta { display: flex; flex-direction: column; gap: 4px; }
-.ntf-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.ntf-row-label { font-size: 11px; color: var(--text2); }
-.ntf-row-val { font-size: 12px; font-weight: 600; }
-.ntf-row-val.gap { color: var(--red); }
-.ntf-row-val.target { color: var(--text); }
-
-/* STATS CARDS */
-.stats-grid {
-  padding: 20px 24px;
+/* ── OVERVIEW: 3 CIRCLE + STATS ── */
+.overview-top {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 0;
+  gap: 14px;
+  margin-bottom: 14px;
 }
-.stat-item {
-  padding: 8px 16px;
-  border-right: 1px solid var(--border);
+.circle-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  padding: 18px 20px;
+  display: flex; align-items: center; gap: 16px;
 }
-.stat-item:last-child { border-right: none; }
+.circle-card-left { position: relative; flex-shrink: 0; }
+.circle-svg-sm { transform: rotate(-90deg); }
+.c-track { fill: none; stroke: #e8edf4; stroke-width: 9; }
+.c-fill  { fill: none; stroke-width: 9; stroke-linecap: round; transition: stroke-dashoffset 1s cubic-bezier(.4,0,.2,1); }
+.circle-inner {
+  position: absolute; top:50%; left:50%;
+  transform: translate(-50%,-50%);
+  text-align: center; pointer-events: none;
+}
+.c-pct { font-size: 15px; font-weight: 800; line-height: 1; }
+.c-tag { font-size: 8px; color: var(--text3); margin-top: 1px; letter-spacing: 0.04em; }
+.circle-card-right { flex: 1; min-width: 0; }
+.cc-label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text3); margin-bottom: 4px; }
+.cc-value { font-size: 18px; font-weight: 800; line-height: 1.1; margin-bottom: 6px; word-break: break-all; }
+.cc-rows { display: flex; flex-direction: column; gap: 3px; }
+.cc-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.cc-row-lbl { font-size: 10px; color: var(--text2); white-space: nowrap; }
+.cc-row-val { font-size: 11px; font-weight: 600; white-space: nowrap; }
+.cc-row-val.neg { color: var(--red); }
+.cc-row-val.pos { color: var(--green); }
+.cc-row-val.dim { color: var(--text2); }
+
+/* STATS ROW bawah */
+.overview-bottom {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 14px;
+  margin-bottom: 20px;
+}
+.stat-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  padding: 14px 18px;
+}
 .stat-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text3); margin-bottom: 6px; }
-.stat-value { font-size: 28px; font-weight: 800; line-height: 1; }
-.stat-value.blue { color: var(--accent); }
-.stat-value.green { color: var(--green); }
+.stat-value { font-size: 26px; font-weight: 800; line-height: 1; }
+.stat-value.blue   { color: var(--accent); }
+.stat-value.green  { color: var(--green); }
 .stat-value.orange { color: var(--orange); }
-.stat-value.red { color: var(--red); }
+.stat-value.red    { color: var(--red); }
 .stat-value.purple { color: var(--purple); }
-.stat-value.gray { color: var(--text2); }
-.stat-sub { font-size: 10px; color: var(--text3); margin-top: 3px; }
+.stat-value.gray   { color: var(--text2); }
+.stat-sub { font-size: 10px; color: var(--text3); margin-top: 4px; line-height: 1.4; }
 
 /* ── TABEL PER TELE ── */
 .table-card {
@@ -323,85 +328,129 @@ table.perf-table tbody tr.total-row td.name { font-size: 12px; }
     ⚠️ Gagal fetch live data. Pastikan sheet sudah "Anyone with the link = Viewer" dan nama tab sheet sudah benar.
   </div>
 
-  <!-- OVERVIEW -->
+  <!-- OVERVIEW: 3 CIRCLES -->
   <div class="section-label">
     This Month Performance Overview
     <span id="last-update-label"></span>
   </div>
 
-  <div class="overview-grid">
-    <!-- NTF Circle Card -->
-    <div class="card ntf-card">
-      <div class="ntf-title">NTF Achievement (%)</div>
-      <div class="ntf-body">
-        <div class="circle-wrap">
-          <svg class="circle-svg" width="110" height="110" viewBox="0 0 110 110">
-            <circle class="circle-track" cx="55" cy="55" r="46"/>
-            <circle class="circle-fill" id="circle-fill" cx="55" cy="55" r="46"
-              stroke="#2563eb"
-              stroke-dasharray="289.03"
-              stroke-dashoffset="289.03"/>
-          </svg>
-          <div class="circle-label">
-            <div class="circle-pct" id="circle-pct" style="color:#2563eb">0%</div>
-            <div class="circle-sub">NTF</div>
-          </div>
+  <!-- ROW 1: 3 Circle Cards -->
+  <div class="overview-top">
+
+    <!-- Circle 1: Motor Internal -->
+    <div class="circle-card">
+      <div class="circle-card-left">
+        <svg class="circle-svg-sm" width="96" height="96" viewBox="0 0 96 96">
+          <circle class="c-track" cx="48" cy="48" r="39"/>
+          <circle class="c-fill" id="c-fill-mi" cx="48" cy="48" r="39"
+            stroke="#2563eb" stroke-dasharray="245.04" stroke-dashoffset="245.04"/>
+        </svg>
+        <div class="circle-inner">
+          <div class="c-pct" id="c-pct-mi" style="color:#2563eb">0%</div>
+          <div class="c-tag">INT</div>
         </div>
-        <div class="ntf-info">
-          <div class="ntf-label">NTF Achievement (Rp)</div>
-          <div class="ntf-amount" id="ntf-amount">Rp 0</div>
-          <div class="ntf-meta">
-            <div class="ntf-row">
-              <span class="ntf-row-label">Target (Rp)</span>
-              <span class="ntf-row-val target" id="ntf-target">—</span>
-            </div>
-            <div class="ntf-row">
-              <span class="ntf-row-label">Gap (Rp)</span>
-              <span class="ntf-row-val gap" id="ntf-gap">—</span>
-            </div>
+      </div>
+      <div class="circle-card-right">
+        <div class="cc-label">🏍 Motor Internal</div>
+        <div class="cc-value" id="cc-val-mi" style="color:#2563eb">0 unit</div>
+        <div class="cc-rows">
+          <div class="cc-row">
+            <span class="cc-row-lbl">Target</span>
+            <span class="cc-row-val dim" id="cc-tgt-mi">— unit</span>
+          </div>
+          <div class="cc-row">
+            <span class="cc-row-lbl">Gap</span>
+            <span class="cc-row-val" id="cc-gap-mi">—</span>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Stats -->
-    <div class="card" style="padding:20px 0;">
-      <!-- Row 1: Total + Golive breakdown per produk -->
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);border-bottom:1px solid var(--border);">
-        <div class="stat-item">
-          <div class="stat-label">Total Order In</div>
-          <div class="stat-value blue" id="stat-total">0</div>
-          <div class="stat-sub">semua status</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-label">Golive / Cair</div>
-          <div class="stat-value green" id="stat-golive">0</div>
-          <div class="stat-sub" id="stat-golive-sub">🏍 0 motor · 🚗 0 mobil</div>
-        </div>
-        <div class="stat-item" style="border-right:none">
-          <div class="stat-label">Conv. Rate</div>
-          <div class="stat-value gray" id="stat-conv">0%</div>
-          <div class="stat-sub">golive / total order</div>
+    <!-- Circle 2: Motor External -->
+    <div class="circle-card">
+      <div class="circle-card-left">
+        <svg class="circle-svg-sm" width="96" height="96" viewBox="0 0 96 96">
+          <circle class="c-track" cx="48" cy="48" r="39"/>
+          <circle class="c-fill" id="c-fill-me" cx="48" cy="48" r="39"
+            stroke="#7c3aed" stroke-dasharray="245.04" stroke-dashoffset="245.04"/>
+        </svg>
+        <div class="circle-inner">
+          <div class="c-pct" id="c-pct-me" style="color:#7c3aed">0%</div>
+          <div class="c-tag">EXT</div>
         </div>
       </div>
-      <!-- Row 2: Cancel Reject Proses Survey -->
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);padding-top:4px">
-        <div class="stat-item">
-          <div class="stat-label">Cancel</div>
-          <div class="stat-value orange" id="stat-cancel">0</div>
-          <div class="stat-sub" id="stat-cancel-sub">🏍 0 · 🚗 0</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-label">Reject</div>
-          <div class="stat-value red" id="stat-reject">0</div>
-          <div class="stat-sub" id="stat-reject-sub">🏍 0 · 🚗 0</div>
-        </div>
-        <div class="stat-item" style="border-right:none">
-          <div class="stat-label">Proses + Survey</div>
-          <div class="stat-value purple" id="stat-proses">0</div>
-          <div class="stat-sub" id="stat-proses-sub">Proses 0 · Survey 0</div>
+      <div class="circle-card-right">
+        <div class="cc-label">🏍 Motor External</div>
+        <div class="cc-value" id="cc-val-me" style="color:#7c3aed">0 unit</div>
+        <div class="cc-rows">
+          <div class="cc-row">
+            <span class="cc-row-lbl">Target</span>
+            <span class="cc-row-val dim" id="cc-tgt-me">— unit</span>
+          </div>
+          <div class="cc-row">
+            <span class="cc-row-lbl">Gap</span>
+            <span class="cc-row-val" id="cc-gap-me">—</span>
+          </div>
         </div>
       </div>
+    </div>
+
+    <!-- Circle 3: Mobil NTF -->
+    <div class="circle-card">
+      <div class="circle-card-left">
+        <svg class="circle-svg-sm" width="96" height="96" viewBox="0 0 96 96">
+          <circle class="c-track" cx="48" cy="48" r="39"/>
+          <circle class="c-fill" id="c-fill-mb" cx="48" cy="48" r="39"
+            stroke="#16a34a" stroke-dasharray="245.04" stroke-dashoffset="245.04"/>
+        </svg>
+        <div class="circle-inner">
+          <div class="c-pct" id="c-pct-mb" style="color:#16a34a">0%</div>
+          <div class="c-tag">NTF</div>
+        </div>
+      </div>
+      <div class="circle-card-right">
+        <div class="cc-label">🚗 Mobil (NTF)</div>
+        <div class="cc-value" id="cc-val-mb" style="color:#16a34a">Rp 0</div>
+        <div class="cc-rows">
+          <div class="cc-row">
+            <span class="cc-row-lbl">Target</span>
+            <span class="cc-row-val dim" id="cc-tgt-mb">—</span>
+          </div>
+          <div class="cc-row">
+            <span class="cc-row-lbl">Gap</span>
+            <span class="cc-row-val" id="cc-gap-mb">—</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROW 2: Stats Cards -->
+  <div class="overview-bottom">
+    <div class="stat-card">
+      <div class="stat-label">Total Order In</div>
+      <div class="stat-value blue" id="stat-total">0</div>
+      <div class="stat-sub">semua status</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Golive / Cair</div>
+      <div class="stat-value green" id="stat-golive">0</div>
+      <div class="stat-sub" id="stat-golive-sub">🏍 0 motor · 🚗 0 mobil</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Cancel</div>
+      <div class="stat-value orange" id="stat-cancel">0</div>
+      <div class="stat-sub" id="stat-cancel-sub">🏍 0 · 🚗 0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Reject</div>
+      <div class="stat-value red" id="stat-reject">0</div>
+      <div class="stat-sub" id="stat-reject-sub">🏍 0 · 🚗 0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Proses + Survey</div>
+      <div class="stat-value purple" id="stat-proses">0</div>
+      <div class="stat-sub" id="stat-proses-sub">Proses 0 · Survey 0</div>
     </div>
   </div>
 
@@ -779,65 +828,94 @@ function renderAll() {
 }
 
 function renderOverview(data) {
-  const total    = data.length;
-  const st       = s => data.filter(r=>r.status===s);
-  const glAll    = st('GOLIVE');
-  const golive   = glAll.length;
-  const cancel   = st('CANCEL').length;
-  const reject   = st('REJECT').length;
-  const proses   = st('PROSES').length;
-  const survey   = st('SURVEY').length;
-  const conv     = total>0 ? (golive/total*100).toFixed(1) : '0';
+  const total  = data.length;
+  const glAll  = data.filter(r=>r.status==='GOLIVE');
+  const golive = glAll.length;
+  const cancel = data.filter(r=>r.status==='CANCEL').length;
+  const reject = data.filter(r=>r.status==='REJECT').length;
+  const proses = data.filter(r=>r.status==='PROSES').length;
+  const survey = data.filter(r=>r.status==='SURVEY').length;
+  const conv   = total>0 ? (golive/total*100).toFixed(1) : '0';
 
-  // Per produk breakdown
-  const glMotor  = glAll.filter(r=>r.produk==='MOTOR').length;
-  const glMobil  = glAll.filter(r=>r.produk==='MOBIL').length;
-  const ccMotor  = data.filter(r=>r.status==='CANCEL'&&r.produk==='MOTOR').length;
-  const ccMobil  = data.filter(r=>r.status==='CANCEL'&&r.produk==='MOBIL').length;
-  const rjMotor  = data.filter(r=>r.status==='REJECT'&&r.produk==='MOTOR').length;
-  const rjMobil  = data.filter(r=>r.status==='REJECT'&&r.produk==='MOBIL').length;
+  // Per produk
+  const glMotor = glAll.filter(r=>r.produk==='MOTOR').length;
+  const glMobil = glAll.filter(r=>r.produk==='MOBIL').length;
+  const ccMotor = data.filter(r=>r.status==='CANCEL'&&r.produk==='MOTOR').length;
+  const ccMobil = data.filter(r=>r.status==='CANCEL'&&r.produk==='MOBIL').length;
+  const rjMotor = data.filter(r=>r.status==='REJECT'&&r.produk==='MOTOR').length;
+  const rjMobil = data.filter(r=>r.status==='REJECT'&&r.produk==='MOBIL').length;
 
-  // NTF Mobil = SUM pencairan GOLIVE MOBIL
-  const ntfAmt   = glAll.filter(r=>r.produk==='MOBIL').reduce((s,r)=>s+r.pencairan,0);
-
-  // Total target dari SEMUA tele di sheet TARGET PERTELE (bukan hanya yang ada di data bulan ini)
-  const allTargetTeles = Object.keys(TARGETS);
-  const totalTargetMotorInt = allTargetTeles.reduce((s,t)=>s+(TARGETS[t]?.motorInt||0),0);
-  const totalTargetMotorExt = allTargetTeles.reduce((s,t)=>s+(TARGETS[t]?.motorExt||0),0);
-  const totalTargetNTF      = allTargetTeles.reduce((s,t)=>s+(TARGETS[t]?.mobilAmt||0),0);
-  // Total target motor = INT + EXT
-  const totalTargetMotor    = totalTargetMotorInt + totalTargetMotorExt;
-
-  // Achievement motor = COUNT golive MOTOR (semua source)
+  // Achievement per target
   const achMotorInt = glAll.filter(r=>r.produk==='MOTOR'&&r.source==='INTERNAL').length;
   const achMotorExt = glAll.filter(r=>r.produk==='MOTOR'&&r.source==='EXTERNAL').length;
+  const achMobilAmt = glAll.filter(r=>r.produk==='MOBIL').reduce((s,r)=>s+r.pencairan,0);
 
-  const pctNTF = totalTargetNTF>0 ? Math.min((ntfAmt/totalTargetNTF)*100, 999) : 0;
-  const gapNTF = ntfAmt - totalTargetNTF;
+  // Sum semua target dari sheet TARGET PERTELE
+  const allTeles = Object.keys(TARGETS);
+  const tgtMotorInt = allTeles.reduce((s,t)=>s+(TARGETS[t]?.motorInt||0),0);
+  const tgtMotorExt = allTeles.reduce((s,t)=>s+(TARGETS[t]?.motorExt||0),0);
+  const tgtMobilAmt = allTeles.reduce((s,t)=>s+(TARGETS[t]?.mobilAmt||0),0);
 
-  // Circle NTF
-  const circ   = 2*Math.PI*46;
-  const offset = circ - Math.min(pctNTF/100,1)*circ;
-  const fillEl = document.getElementById('circle-fill');
-  fillEl.style.strokeDashoffset = offset;
-  fillEl.setAttribute('stroke', pctNTF>=100?'#16a34a':pctNTF>=70?'#ea580c':'#2563eb');
-  document.getElementById('circle-pct').textContent = pctNTF.toFixed(1)+'%';
-  document.getElementById('circle-pct').style.color = pctNTF>=100?'#16a34a':pctNTF>=70?'#ea580c':'#2563eb';
-  document.getElementById('ntf-amount').textContent  = fmtRp(ntfAmt);
-  document.getElementById('ntf-target').textContent  = totalTargetNTF>0 ? fmtRp(totalTargetNTF) : '—';
-  document.getElementById('ntf-gap').textContent     = totalTargetNTF>0 ? (gapNTF>=0?'+':'')+fmtRp(gapNTF) : '—';
-  document.getElementById('ntf-gap').style.color     = gapNTF>=0?'#16a34a':'#dc2626';
+  // Pct & gap
+  const pctMI = tgtMotorInt>0 ? Math.min((achMotorInt/tgtMotorInt)*100, 999) : 0;
+  const pctME = tgtMotorExt>0 ? Math.min((achMotorExt/tgtMotorExt)*100, 999) : 0;
+  const pctMB = tgtMobilAmt>0 ? Math.min((achMobilAmt/tgtMobilAmt)*100, 999) : 0;
+  const gapMI = achMotorInt - tgtMotorInt;
+  const gapME = achMotorExt - tgtMotorExt;
+  const gapMB = achMobilAmt - tgtMobilAmt;
 
-  // Stats cards
-  el('stat-total').textContent     = total;
-  el('stat-golive').textContent    = golive;
-  el('stat-golive-sub').innerHTML  = `🏍 ${glMotor} motor &nbsp;·&nbsp; 🚗 ${glMobil} mobil`;
-  el('stat-conv').textContent      = conv+'%';
-  el('stat-cancel').textContent    = cancel;
-  el('stat-cancel-sub').innerHTML  = `🏍 ${ccMotor} &nbsp;·&nbsp; 🚗 ${ccMobil}`;
-  el('stat-reject').textContent    = reject;
-  el('stat-reject-sub').innerHTML  = `🏍 ${rjMotor} &nbsp;·&nbsp; 🚗 ${rjMobil}`;
-  el('stat-proses').textContent    = proses+survey;
+  // Helper: update satu circle
+  const CIRC = 2*Math.PI*39; // r=39 → 245.04
+  function setCircle(fillId, pctId, valId, tgtId, gapId, pct, color, achStr, tgtStr, gapStr, gapPos) {
+    const offset = CIRC - Math.min(pct/100,1)*CIRC;
+    const fill   = document.getElementById(fillId);
+    const pctEl  = document.getElementById(pctId);
+    const c      = pct>=100?'#16a34a':pct>=70?'#ea580c':color;
+    fill.style.strokeDashoffset = offset;
+    fill.setAttribute('stroke', c);
+    pctEl.textContent = pct.toFixed(1)+'%';
+    pctEl.style.color = c;
+    document.getElementById(valId).textContent = achStr;
+    document.getElementById(tgtId).textContent = tgtStr;
+    const gapEl = document.getElementById(gapId);
+    gapEl.textContent  = gapStr;
+    gapEl.className    = 'cc-row-val '+(gapPos?'pos':'neg');
+  }
+
+  setCircle(
+    'c-fill-mi','c-pct-mi','cc-val-mi','cc-tgt-mi','cc-gap-mi',
+    pctMI, '#2563eb',
+    `${achMotorInt} unit`,
+    tgtMotorInt>0 ? `${tgtMotorInt} unit` : '— unit',
+    tgtMotorInt>0 ? `${gapMI>=0?'+':''}${gapMI} unit` : '—',
+    gapMI>=0
+  );
+  setCircle(
+    'c-fill-me','c-pct-me','cc-val-me','cc-tgt-me','cc-gap-me',
+    pctME, '#7c3aed',
+    `${achMotorExt} unit`,
+    tgtMotorExt>0 ? `${tgtMotorExt} unit` : '— unit',
+    tgtMotorExt>0 ? `${gapME>=0?'+':''}${gapME} unit` : '—',
+    gapME>=0
+  );
+  setCircle(
+    'c-fill-mb','c-pct-mb','cc-val-mb','cc-tgt-mb','cc-gap-mb',
+    pctMB, '#16a34a',
+    fmtRp(achMobilAmt),
+    tgtMobilAmt>0 ? fmtRp(tgtMobilAmt) : '—',
+    tgtMobilAmt>0 ? (gapMB>=0?'+':'')+fmtRp(gapMB) : '—',
+    gapMB>=0
+  );
+
+  // Stats row
+  el('stat-total').textContent    = total;
+  el('stat-golive').textContent   = golive;
+  el('stat-golive-sub').innerHTML = `🏍 ${glMotor} motor &nbsp;·&nbsp; 🚗 ${glMobil} mobil`;
+  el('stat-cancel').textContent   = cancel;
+  el('stat-cancel-sub').innerHTML = `🏍 ${ccMotor} &nbsp;·&nbsp; 🚗 ${ccMobil}`;
+  el('stat-reject').textContent   = reject;
+  el('stat-reject-sub').innerHTML = `🏍 ${rjMotor} &nbsp;·&nbsp; 🚗 ${rjMobil}`;
+  el('stat-proses').textContent   = proses+survey;
   el('stat-proses-sub').textContent = `Proses ${proses} · Survey ${survey}`;
 }
 
