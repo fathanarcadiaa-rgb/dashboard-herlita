@@ -220,7 +220,7 @@ select.filter-select:focus { border-color: var(--accent); }
 <div id="loader">
   <div class="loader-inner">
     <div class="loader-spinner"></div>
-    <div class="loader-text" id="loader-text">Fetching live data dari Google Sheets...</div>
+    <div class="loader-text" id="loader-text">Fetching ORDER IN + TARGET PERTELE...</div>
   </div>
 </div>
 
@@ -337,26 +337,44 @@ select.filter-select:focus { border-color: var(--accent); }
 //  CONFIG — GANTI DI SINI KALAU SHEET BERUBAH
 // ─────────────────────────────────────────────
 const SHEET_ID = '1cbiDyIBRRZSWyCZ-ewcYRSPkomYGzpJYfhiWHbYedOs';
-const SHEET_GID = '0'; // gid tab ORDER IN — cek URL sheet lo jika berbeda
 
-// Nama kolom di header sheet lo (case-insensitive, partial match)
-// Edit sesuai nama kolom aktual di spreadsheet
+// Fetch pakai nama sheet (lebih reliable daripada gid)
+// Nama tab harus PERSIS seperti di Google Sheets (case-sensitive)
+const SHEET_NAME_ORDER  = 'ORDER IN';       // tab data transaksi
+const SHEET_NAME_TARGET = 'TARGET PERTELE'; // tab target per tele
+
+function sheetUrl(sheetName) {
+  return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
+}
+
+// Nama kolom di header sheet ORDER IN (exact match, case-insensitive)
+// Sudah disesuaikan dengan header aktual lo:
+// TANGGAL | PRODUCK | NAMA KONSUMEN | ... | STATUS | PENCAIRAN | ... | LEASING | ... | NAMA TELE | ... | SOURCE
 const COL_NAMES = {
-  tanggal:   ['TANGGAL','TGL','DATE','TANGGAL ORDER','TANGGAL GOLIVE'],
-  produk:    ['PRODUK','PRODUCT','JENIS PRODUK','JENIS'],
-  nama:      ['NAMA','NAMA KONSUMEN','CUSTOMER','KONSUMEN','NAMA CUSTOMER'],
-  status:    ['STATUS','STATUS ORDER','STATE','KONDISI'],
-  pencairan: ['PENCAIRAN','NOMINAL PENCAIRAN','NOMINAL','AMOUNT','JUMLAH'],
-  tele:      ['TELE','NAMA TELE','TELEMARKETING','SALES','PIC','MARKETING'],
-  source:    ['SOURCE','SUMBER','JENIS SOURCE','INT/EXT','INTERNAL/EXTERNAL'],
-  merk:      ['MERK','TIPE','KENDARAAN','MERK KENDARAAN','MERK/TIPE','UNIT'],
-  leasing:   ['LEASING','FINANCE','PERUSAHAAN','COMPANY','FIN'],
+  tanggal:   ['TANGGAL'],
+  produk:    ['PRODUCK','PRODUK','PRODUCT'],          // lo punya "PRODUCK"
+  nama:      ['NAMA KONSUMEN','NAMA','KONSUMEN'],
+  status:    ['STATUS'],
+  pencairan: ['PENCAIRAN'],
+  tele:      ['NAMA TELE','TELE'],
+  source:    ['SOURCE'],
+  merk:      ['MERK/TIPE/TAHUN','MERK/TIPE','MERK','TIPE'],
+  leasing:   ['LEASING'],
+};
+
+// Nama kolom di sheet TARGET PERTELE
+const TARGET_COL_NAMES = {
+  tele:      ['NAMA TELE','TELE'],
+  motorInt:  ['TARGET UNIT INTERNAL','UNIT INTERNAL','TARGET INT'],
+  motorExt:  ['TARGET UNIT EXTERNAL','UNIT EXTERNAL','TARGET EXT'],
+  mobilAmt:  ['TARGET AMOUNT MOBIL','AMOUNT MOBIL','TARGET MOBIL'],
 };
 
 // ─────────────────────────────────────────────
-//  TARGETS
+//  TARGETS — diisi dari sheet TARGET PERTELE
+//  Fallback hardcoded kalau fetch gagal
 // ─────────────────────────────────────────────
-const TARGETS = {
+let TARGETS = {
   MONIC: { motorInt: 50, motorExt: 60, mobilAmt: 300_000_000 },
   RINDA: { motorInt: 50, motorExt: 60, mobilAmt: 300_000_000 },
   NAFHA: { motorInt: 50, motorExt: 60, mobilAmt: 300_000_000 },
@@ -484,17 +502,59 @@ function parseCSV(text) {
 }
 
 // ─────────────────────────────────────────────
-//  FETCH
+//  FETCH TARGET PERTELE
+// ─────────────────────────────────────────────
+async function fetchTargets() {
+  try {
+    const res = await fetch(sheetUrl(SHEET_NAME_TARGET), { cache: 'no-cache' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const text = await res.text();
+    if (!text || text.length < 10) throw new Error('Empty');
+
+    const lines = text.trim().split(/\r?\n/);
+    if (lines.length < 2) throw new Error('No rows');
+    const headers = parseCSVRow(lines[0]).map(h => h.trim().toUpperCase());
+
+    const ci = {};
+    for (const [key, cands] of Object.entries(TARGET_COL_NAMES)) {
+      ci[key] = findCol(headers, cands);
+    }
+
+    const newTargets = {};
+    for (let i = 1; i < lines.length; i++) {
+      if (!lines[i].trim()) continue;
+      const row = parseCSVRow(lines[i]);
+      const get = k => ci[k] >= 0 ? (row[ci[k]] || '').trim() : '';
+      const teleName = get('tele').toUpperCase().trim();
+      if (!teleName) continue;
+      newTargets[teleName] = {
+        motorInt: parseInt(get('motorInt').replace(/\D/g,'')) || 0,
+        motorExt: parseInt(get('motorExt').replace(/\D/g,'')) || 0,
+        mobilAmt: parsePencairan(get('mobilAmt')) || 0,
+      };
+    }
+
+    if (Object.keys(newTargets).length > 0) {
+      TARGETS = newTargets;
+      console.log('Targets loaded from sheet:', TARGETS);
+    }
+  } catch (e) {
+    console.warn('fetchTargets gagal, pakai fallback:', e.message);
+  }
+}
+
+// ─────────────────────────────────────────────
+//  FETCH ORDER IN
 // ─────────────────────────────────────────────
 async function fetchLiveData() {
-  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${SHEET_GID}`;
   try {
+    const url = sheetUrl(SHEET_NAME_ORDER);
     const res = await fetch(url, { cache: 'no-cache' });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const text = await res.text();
-    if (!text || text.length < 50) throw new Error('Empty');
+    if (!text || text.length < 50) throw new Error('Empty response');
     const parsed = parseCSV(text);
-    if (parsed.length === 0) throw new Error('No rows');
+    if (parsed.length === 0) throw new Error('No rows parsed — cek nama kolom di COL_NAMES');
     RAW_DATA = parsed;
     isLiveData = true;
     setBadge('live', `✅ LIVE — ${parsed.length} baris`);
@@ -502,7 +562,7 @@ async function fetchLiveData() {
     document.getElementById('refresh-dot').classList.remove('error');
     return true;
   } catch (e) {
-    console.warn('Fetch gagal:', e.message);
+    console.warn('Fetch ORDER IN gagal:', e.message);
     isLiveData = false;
     setBadge('fallback', '⚠️ GAGAL FETCH');
     document.getElementById('fetch-banner').classList.add('show');
@@ -521,9 +581,12 @@ function setBadge(type, label) {
 //  INIT
 // ─────────────────────────────────────────────
 async function init() {
-  await fetchLiveData();
+  // Fetch targets dan order data secara paralel
+  setBadge('loading', '⏳ Loading...');
+  await Promise.all([fetchTargets(), fetchLiveData()]);
+
   if (RAW_DATA.length === 0) {
-    document.getElementById('loader-text').textContent = 'Tidak ada data. Cek permission sheet & refresh.';
+    document.getElementById('loader-text').textContent = 'Tidak ada data. Cek nama tab sheet & permission.';
     setTimeout(hideLoader, 2500);
     return;
   }
@@ -797,8 +860,8 @@ function startRefreshTimer() {
 
 async function refreshData() {
   setBadge('loading','⏳ Refreshing...');
-  const ok = await fetchLiveData();
-  if (ok && RAW_DATA.length > 0) { buildBulanOptions(); applyFilters(); }
+  await Promise.all([fetchTargets(), fetchLiveData()]);
+  if (RAW_DATA.length > 0) { buildBulanOptions(); applyFilters(); }
   lastRefresh = new Date(); updateRefreshLabel();
   clearInterval(refreshTimer);
   refreshTimer = setInterval(refreshData, 3600000);
